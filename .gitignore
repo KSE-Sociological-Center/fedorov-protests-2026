@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+
+# Natural Earth downloads: ~55 MB, regenerable, and geo.py already carries the
+# simplified rings the build needs. Do not commit the raw layers.
+ne_*.geojson
+ne_*.json
+adm0.json
+adm1.json
+disp.json
+
+# Scratch
+scratch/
+tmp/
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Local tool settings
+.claude/settings.local.json
+
+# Generated artifacts are COMMITTED on purpose: data/*/map.png is embedded in the
+# README, and report.md is a deliverable. They are reproducible from the CSVs via
+# build_*.py, but the repo is meant to be readable without running anything.
