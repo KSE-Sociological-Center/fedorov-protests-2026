@@ -78,6 +78,16 @@ if os.path.exists(rep_path):
     else:
         warns.append("no TABLE2 markers in report")
 
+# 9. by_day.csv (chart source) cities must all exist in the canon
+bd_path = ds("by_day.csv")
+if os.path.exists(bd_path):
+    bd = list(csv.DictReader(io.open(bd_path, encoding="utf-8")))
+    bd_orphans = sorted({r["city"] for r in bd} - set(canon))
+    if bd_orphans:
+        errors.append("by_day.csv cities missing from canon: %s" % ", ".join(bd_orphans))
+    if not any(r["city"] == "Kyiv" for r in bd):
+        warns.append("by_day.csv has no Kyiv row")
+
 print("canon: %d locations | publications: %d" % (len(cities), len(pubs)))
 print("distribution: " + " · ".join("%s %d" % kv for kv in dist.most_common()) + " = %d" % sum(dist.values()))
 for w in warns: print("  WARNING:", w)

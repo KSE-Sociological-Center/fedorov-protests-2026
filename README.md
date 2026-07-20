@@ -2,7 +2,7 @@
 
 A dataset of the protests that followed Mykhailo Fedorov's departure from the post of Minister of Defence of Ukraine, compiled from media reports. Contains the collection prompt, the data, and scripts that generate the map and the report.
 
-Event date: 16 July 2026. The protests are known as «cardboard protests» after the handwritten signs their participants carried.
+Event dates: 16–19 July 2026 (ongoing). The protests are known as «cardboard protests» after the handwritten signs their participants carried.
 
 Everything is in English **except verbatim quotes**, which stay in the original Ukrainian: the `quote_uk` column is defined as the outlet's exact words, and translating a quote turns evidence into paraphrase. English glosses live alongside in `quote_en`. Headlines are likewise kept as published.
 
@@ -10,23 +10,23 @@ Everything is in English **except verbatim quotes**, which stay in the original 
 
 **Population.** Publications by Ukrainian media (national, regional, local) covering protests connected to Fedorov leaving office. English-language agencies (Interfax-Ukraine, Kyiv Post, AFP, AP) are included to cross-check the Kyiv figure.
 
-**Period.** 15–16 July 2026. Snapshot taken 16 July 2026, 15:00 Kyiv time.
+**Period.** 15–19 July 2026. Latest run 19 July 2026; the wave is in its fourth day and ongoing.
 
 **Unit of observation.** Publication × city. A publication covering several cities yields several rows.
 
-**Size.** 114 publications, 58 domains, 25 locations.
+**Size.** 150 publications, 62 domains, 28 locations.
 
 **Sampling.** Three independent procedures:
 
 1. Parsing national round-ups and live blogs (Suspilne, TSN, NV, Ukrainska Pravda, LB, RBC, Detector Media, Censor.NET, Glavcom, 24 Kanal, ZAXID, ZN.UA, KP.UA), which enumerate cities themselves.
 2. Direct retrieval from Suspilne's regional desks (22 sections) and local outlets, for every city found in step 1.
-3. A gazetteer sweep: 499 Ukrainian city names from Wikidata queried through Google News, requiring the name in the headline. Validated on Kremenchuk, which the procedure finds independently. Coverage: cities ≥30k. Yield beyond procedures 1–2: one location (Kolomyia).
+3. A gazetteer sweep: 499 Ukrainian city names from Wikidata queried through Google News, requiring the name in the headline. Validated on Kremenchuk, which the procedure finds independently. Coverage: cities ≥30k. Yield beyond procedures 1–2: Kolomyia (day 1) and Uman (day 4, surfaced by re-running the grep over the day-4 round-ups — see §5).
 
 **Text retrieval.** Raw page (`curl`), tags stripped, quote located by literal string match. Search-engine snippets and summarizer models were not used as a source of figures. See §3.6.
 
 ## 2. Variables
 
-### `cities.csv` — unit: location (N = 25)
+### `cities.csv` — unit: location (N = 28)
 
 | Variable | Type | Domain / example |
 |---|---|---|
@@ -39,11 +39,11 @@ Everything is in English **except verbatim quotes**, which stay in the original 
 | `time` | time | the moment the figure is valid for |
 | `source` | text | outlet plus attribution: Suspilne Kharkiv (police spokesperson Liudmyla Prokopenko) |
 | `link` | URL | the specific publication |
-| `contested` | binary | `yes` (3) · `no` (22) |
-| `status` | categorical | `ended` (17) · `ongoing` (5) · `took place` (2) · `online` (1) |
+| `contested` | binary | `yes` (4) · `no` (24) |
+| `status` | categorical | `ended` (16) · `took place` (11) · `online` (1) |
 | `note` | text | justification for the assigned category; conflicting versions |
 
-### `publications.csv` — unit: publication × city (N = 114)
+### `publications.csv` — unit: publication × city (N = 150)
 
 | Variable | Type | Domain / example |
 |---|---|---|
@@ -53,11 +53,11 @@ Everything is in English **except verbatim quotes**, which stay in the original 
 | `link` | URL | publication |
 | `published` | text | publication time, with update time where given |
 | `quote_uk` | text | verbatim quote about the crowd size |
-| `category` | categorical | `unknown` (47) · `100–999` (32) · `<100` (30) · `1000+` (5) |
-| `status` | categorical | `took place` (111) · `online` (1) · `ongoing` (1) · `refuted` (1) |
-| `provenance` | categorical | `own correspondent` (66) · `relay` (30) · `not stated` (12) · `open-source photo` (4) · `police` (2) |
+| `category` | categorical | `unknown` (59) · `100–999` (45) · `<100` (36) · `1000+` (10) |
+| `status` | categorical | `took place` (146) · `online` (1) · `ongoing` (1) · `refuted` (1) · `announced` (1) |
+| `provenance` | categorical | `own correspondent` (86) · `relay` (44) · `not stated` (12) · `police` (4) · `open-source photo` (4) |
 | `provenance_detail_uk` | text | raw attribution as published: «речниця поліції Харківщини Людмила Прокопенко» |
-| `run` | time | run timestamp: `13:00` · `15:00` |
+| `run` | time | run timestamp: `13:00` · `15:00` · `18 Jul` · `19 Jul` · `19 Jul PM` |
 
 ## 3. Value assignment
 
@@ -98,7 +98,7 @@ Khmelnytskyi    ~50 (09:05) → ~100 (09:30)
 Kharkiv        ~100 → ~300 within half an hour
 ```
 
-Contested in this snapshot: Kyiv (Suspilne «сотні» against Interfax «близько двох тисяч»; no official estimate exists), Kharkiv («щонайменше 300» unattributed against «близько 200» from the police), Poltava (local newsrooms counted ~70 themselves against Suspilne's «близько сотні»).
+Contested in this snapshot: Kyiv (Suspilne «сотні» against Interfax «близько двох тисяч»; no official estimate exists), Kharkiv («щонайменше 300» unattributed against «близько 200» from the police), Poltava (local newsrooms counted ~70 themselves against Suspilne's «близько сотні»), and Odesa (the day-4 «близько тисячі» is single-source — 24 Kanal citing Suspilne — and sits at the 1000 boundary).
 
 ### 3.4 `provenance`
 
@@ -108,7 +108,7 @@ Codes the type of evidence, not the name of the outlet. Priority under mixed att
 
 `unknown` and `online` are distinct states, not a count of zero.
 
-- `unknown`: the protest is documented, no source gives a number (Chernihiv, Kryvyi Rih, Kremenchuk).
+- `unknown`: the protest is documented, no source gives a number (Chernihiv, Kryvyi Rih, Kremenchuk, and the day-4 additions Mukachevo, Kamianske, Uman).
 - `online`: no street protest took place, for a documented reason, and the protest moved to another format. Kherson: «Через безпекову ситуацію жителі Херсона долучаються до акції онлайн».
 - Sumy codes as `<100` with the phrasing «до двадцяти людей»: single pickets and cardboard signs left around the city instead of a rally. KP.UA's claim that the action was cancelled is refuted by an on-scene report with photos (Tsukr).
 
@@ -136,19 +136,24 @@ The data exists in one copy. Edit the CSVs only; everything else is generated.
 
 ```
 prompt.md                       collection prompt, reusable with a different period
+build_gazetteer.py              tiered city gazetteer → gazetteer.csv (self-tested)
+gazetteer.csv                   generated: cities ≥20k, tiers A/B, declension-safe stems
 geo.py                          borders and oblasts, Natural Earth 10m admin_1
 build_map.py                    cities.csv        → map.png
 build_report.py                 both CSVs + prose → report.md
 build_artifact.py               cities.csv        → map.html
+build_chart.py                  by_day.csv        → chart_by_day.png
 check_consistency.py            verifies the artifacts against each other
 data/2026-07-16-fedorov/
     meta.json                   title, date, snapshot time, author
     cities.csv                  canonical: locations
     publications.csv            canonical: publications
+    by_day.csv                  canonical: approx turnout per city per day (chart source)
     prose.md                    hand-written part of the report, markers for generated tables
     report.md                   generated
     map.png                     generated
     map.html                    generated
+    chart_by_day.png            generated
 ```
 
 The build scripts live at the root and are dataset-agnostic. Each takes the dataset directory as an argument, defaulting to `data/2026-07-16-fedorov`. A new event is a new folder under `data/`, not a new script. Everything specific to one event (title, snapshot time, author) sits in that folder's `meta.json`.
@@ -165,19 +170,23 @@ python check_consistency.py data/2026-07-16-fedorov
 
 Borders: Natural Earth 10m admin_1, 24 oblasts plus Kyiv, Crimea and Sevastopol, dissolved into a national outline with `shapely`. Natural Earth assigns Crimea and Sevastopol to Russia; this dataset renders them as Ukraine.
 
-![Protest map, 16 July 2026](data/2026-07-16-fedorov/map.png)
+![Protest map, 16–19 July 2026](data/2026-07-16-fedorov/map.png)
+
+Approximate aggregate turnout by day (Kyiv shown separately, as it dominates each day; later days undercount non-Kyiv cities, so those totals are lower bounds):
+
+![Approximate turnout by day, 16–19 July 2026](data/2026-07-16-fedorov/chart_by_day.png)
 
 ## 5. Limitations
 
-**The snapshot is open-ended.** Data reflects 15:00; protests were still running in 5 locations. For those, `kategoriya` is a lower bound.
+**The snapshot is open-ended.** The protest is in its fourth day (16–19 July) and ongoing at the 19 July snapshot. Each location carries its peak over the four-day wave; where a crowd was still growing when last recorded, the figure is a lower bound. The political trigger is unresolved — the ministry is unfilled, Yevhen Khmara is acting minister, and parliament went into recess to 18 August without appointing one — so further days are likely.
 
-**Kyiv.** Suspilne has no Kyiv desk; the only material is a line in the national round-up, stale as of 11:41. Neither the police nor the city administration published a figure. The «сотні» / «дві тисячі» discrepancy is documented, not resolved.
+**Kyiv.** Suspilne has no Kyiv desk. The day-1 peak (~2,000) rests on Interfax, LB, Kyiv Post and AFP, against a stale Suspilne round-up line «сотні»; on day 2 LB's own correspondent gave «близько 3 тисяч» for the evening crowd, which exceeded day 1; day 3 was smaller (Suspilne, reporting Kyiv directly this time, «близько 2 тисяч» by 21:45). Neither the police nor the city administration published a figure. Interfax-Ukraine did report «понад 10 тис.» for the day-2 evening (retrieved via Espreso's citation) — a ~3× gap over LB's own-correspondent count — so the conservative figure is kept as the day-2 peak and the discrepancy flagged rather than the higher number used. Day 4 (19 July) was larger still — Interfax-Ukraine reported «понад 5000» on Ivan Franko Square (via LIGA), now the wave peak.
 
-**Single-source locations.** Uzhhorod and Kolomyia rest on one source each; a targeted search produced no second confirmation.
+**Single-source locations.** Kolomyia, and the day-4 additions Mukachevo, Kamianske and Uman, rest on one source each; a targeted search produced no second confirmation.
 
-**Incomplete coverage of small towns.** The gazetteer sweep covered cities ≥30k (111 names beyond the initial list). The <30k tier (364 names) was not run: Google News began returning 503 after roughly 475 queries.
+**Incomplete coverage of small towns.** The gazetteer sweep covered cities ≥30k (111 names beyond the initial list). The <30k tier (364 names) was not run: Google News began returning 503 after roughly 475 queries. A Telegram-monitoring map (ПошукAI, 17 July) had flagged four further cities — Irpin, Boryspil, Kalush, Drohobych, all ≥50k. The 19 July run reran the revised v3 discovery (gazetteer-grep over every downloaded round-up, batch tier-A queries, targeted city searches) and found **no independent source** for any of the four: they appear in no round-up body and no city-level report, so they are not on the map. Almost every gazetteer hit over the round-ups was a false positive (the organiser's surname «Козятинський», the President's name «Володимир», war-attack city lists) — but re-running the grep over the **day-4** round-ups surfaced one real omission, **Uman**, which had appeared only inside a broadcaster's per-city subsection, not any comma-list; the same read verified **Odesa**'s day-4 «близько тисячі», previously seen only in a search snippet. The revised discovery procedure is in `prompt.md` §4; the tiered city list with declension-safe stems is `gazetteer.csv`.
 
-**Links.** In the publication table, 12 rows point at outlet homepages instead of specific articles. In the location table, 24 of 25 links resolve to articles; the exception is Kyiv, which has no dedicated Suspilne piece.
+**Links.** In the location table, all 28 links resolve to specific articles. In the publication table, 8 rows (day-1 supporting sources) still point at outlet homepages.
 
 **Categorical scale.** The three bands (`<100`, `100–999`, `1000+`) follow the reference map of the protests against law 12414. The boundary at 100 falls where the data clusters, so some locations are coded by the convention in §3.1 rather than by an exact count.
 

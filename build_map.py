@@ -36,6 +36,7 @@ LABEL_DIR = {
     "Chernivtsi": "down", "Zhytomyr": "up", "Sumy": "right", "Kolomyia": "down",
     "Vinnytsia": "right", "Chernihiv": "up", "Kryvyi Rih": "down",
     "Kremenchuk": "down", "Kherson": "down",
+    "Mukachevo": "down", "Kamianske": "up", "Uman": "down",
 }
 
 def font(names, size):
@@ -165,11 +166,12 @@ def T(x, y, s, f, fill, anchor="ls"):
     d.text((x * S, y * S), s, font=f, fill=fill, anchor=anchor)
 
 n_live = sum(1 for c in CITIES if c["status"].startswith("ongoing"))
+SUBLINE = "%s. Protests in %d cities; figures are the peak over the four-day wave." % (META["subtitle_en"], len(CITIES))
+LIVELINE = ("As of %s the wave is ongoing — a fourth day (16–19 July), with Kyiv drawing 5000+ "
+            "and the Defence Ministry still unfilled (Khmara acting; Rada in recess to 18 Aug)." % SNAPSHOT)
 T(28, 62, META["title_en"], F_TITLE, BLACK)
-T(28, 92, "%s. Protests in %d cities. Figures are the peak recorded over the day."
-          % (META["subtitle_en"], len(CITIES)), F_SUB, GREY)
-T(28, 117, "Protests are ongoing, figures are preliminary. Snapshot at %s: in %d cities the action "
-           "had not ended. Kherson protested online." % (SNAPSHOT, n_live), F_META, BLACK)
+T(28, 92, SUBLINE, F_SUB, GREY)
+T(28, 117, LIVELINE, F_META, BLACK)
 d.line([28 * S, 136 * S, (W - 28) * S, 136 * S], fill=BLACK, width=max(1, S))
 
 # ---- legend -----------------------------------------------------------------
@@ -210,8 +212,7 @@ d.text(((W - 28) * S, (H - 20) * S), AUTHOR, font=F_AUTH, fill=BLACK, anchor="rs
 
 # ---- self-check: does the masthead/footer text fit the canvas ------------------
 over = []
-for label, txt, fnt in [("subtitle", "%s. Protests in %d cities. Figures are the peak recorded over the day." % (META["subtitle_en"], len(CITIES)), F_SUB),
-                        ("live line", "Protests are ongoing, figures are preliminary. Snapshot at %s: in %d cities the action had not ended. Kherson protested online." % (SNAPSHOT, n_live), F_META)]:
+for label, txt, fnt in [("subtitle", SUBLINE, F_SUB), ("live line", LIVELINE, F_META)]:
     w = fnt.getbbox(txt)[2] / S
     if 28 + w > W - 28: over.append("%s (+%dpx)" % (label, int(28 + w - (W - 28))))
 foot = ("Protest sizes are approximate. The project is ongoing; some locations may be missing. "

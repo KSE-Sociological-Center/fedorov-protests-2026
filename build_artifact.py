@@ -111,7 +111,7 @@ HTML = """<title>__TITLE__ — map</title>
 <div class="wrap">
   <header style="display:flex;flex-direction:column;gap:8px">
     <h1>__TITLE__</h1>
-    <p class="sub">__SUBTITLE__. Protests in __N__ cities. Figures are the peak recorded over the day.</p>
+    <p class="sub">__SUBTITLE__. Protests in __N__ cities. Figures are the peak over the three-day wave (16–18 July).</p>
     <p class="live">Protests are ongoing, figures are preliminary. Snapshot at __SNAP__: in __LIVE__ cities the action had not ended. Kherson protested online.</p>
   </header>
   <div class="rule"></div>

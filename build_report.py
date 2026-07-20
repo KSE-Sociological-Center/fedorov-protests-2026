@@ -71,9 +71,9 @@ doms = sorted({r["link"].split("/")[2].replace("www.", "") for r in pubs if r["l
 live = [c["city"] for c in cities if c["status"].startswith("ongoing")]
 single = [c["city"] for c in cities if len(by_city.get(c["city"], [])) == 1]
 
-COVERAGE = """### Checked, no protest found (6)
+COVERAGE = """### Checked, no protest found (5)
 
-Drohobych, Mukachevo, Kamianets-Podilskyi, Izmail, Bila Tserkva, Uman.
+Drohobych, Kamianets-Podilskyi, Izmail, Bila Tserkva, Uman. (Mukachevo was here until day 4, when it protested — now on the map.)
 
 **Not marked on the map, deliberately.** These six were checked only because they appeared in the prompt's city list. The remaining ~460 cities of Ukraine were not checked individually, so marking these six as checked-and-empty would claim a systematic negative survey that does not exist. Kremenchuk proves the point: not an oblast capital, a protest **did** take place, and it surfaced only by querying a local outlet directly.
 
@@ -83,7 +83,7 @@ The initial city universe came from the prompt's list plus whatever the national
 
 **Yield: one location, Kolomyia, 11 people.** Verified separately: Kolomyia appears in **none of the 12 national round-ups**, and in none of the four Ivano-Frankivsk regional sources retrieved here. Its own local outlet covered it, but procedure 2 retrieves local outlets only for cities already surfaced by procedure 1.
 
-**The result is negative, and that is its value.** The sweep cost about 475 queries, hit rate limiting, and changed no conclusion: not the geography, since Ivano-Frankivsk oblast was already on the map, not the scale, not any contested figure. Kremenchuk, also not an oblast capital, **is** listed by KP.UA. National round-ups plus Suspilne regional desks cover everything consequential; outside them live actions of eleven people. CitySites: 8 non-capital sites (Bila Tserkva, Pryluky, Konotop, Nikopol, Kamianske, Irpin, Kramatorsk, Kremenchuk) carry nothing. Raion.in.ua: the word Fedorov does not appear at all. No Wikipedia article on these protests exists. No actions abroad were found.
+**The result is negative, and that is its value.** The sweep cost about 475 queries, hit rate limiting, and changed no conclusion: not the geography, since Ivano-Frankivsk oblast was already on the map, not the scale, not any contested figure. Kremenchuk, also not an oblast capital, **is** listed by KP.UA. National round-ups plus Suspilne regional desks cover everything consequential; outside them live actions of eleven people. CitySites: non-capital sites (Bila Tserkva, Pryluky, Konotop, Nikopol, Irpin, Kramatorsk) carry nothing on day 1; **Kamianske** was empty then but protested on day 4 (5.ua), and Kremenchuk was already on the map via KP.UA. Raion.in.ua: the word Fedorov does not appear at all. No Wikipedia article on these protests exists. No actions abroad were found in the day-1 sweep — they appeared only on day 3 (Warsaw, Brussels, Sydney).
 
 **The tier below 30k inhabitants (364 towns) was not swept.** Google News began returning 503 after roughly 475 queries.
 
@@ -107,10 +107,38 @@ b3.append("**Single-source locations** (no second confirmation found): " + ", ".
 fronts = [r for r in pubs if r["link"].startswith("http")
           and len(r["link"].rstrip("/").split("/")) <= 3]
 if fronts:
-    b3.append("**Known defect: %d publications link to an outlet homepage instead of a specific article.** "
-              "All are from the 13:00 run. The location table is clean: 24 of 25 links resolve to articles; "
-              "the exception is Kyiv, where Suspilne has no dedicated piece. Outstanding: %s.\n"
-              % (len(fronts), ", ".join(sorted({"%s (%s)" % (r["outlet"], r["city"]) for r in fronts}))))
+    b3.append("**Known defect: %d publications link to an outlet homepage instead of a specific article** "
+              "(day-1 supporting rows). The canon is clean: **all %d location links resolve to specific "
+              "articles** — the day-1 Suspilne desk and bare-id 404 links were fixed this run. Outstanding: %s.\n"
+              % (len(fronts), len(cities), ", ".join(sorted({"%s (%s)" % (r["outlet"], r["city"]) for r in fronts}))))
+
+b3.append(
+    "### Second day (17 July), added in the 18 July run\n\n"
+    "Street actions recurred in at least Kyiv, Lutsk, Mykolaiv, Kropyvnytskyi, Ternopil, Poltava, "
+    "Ivano-Frankivsk, Chernivtsi, Sumy, Zhytomyr and Dnipro; Odesa announced an evening action. "
+    "**Only Kyiv's peak rose** (≈2,000 → «близько 3 тисяч», still 1000+); elsewhere the second day was "
+    "no larger than the first, and no new location appeared, so no dot changes band — the map's "
+    "second-day change is its framing and the settled statuses, not its geometry. A solidarity action "
+    "in **Warsaw** is outside the map's Ukraine-only scope, recorded here only as a note. A **third day** "
+    "was called for the evening of 18 July.\n")
+
+b3.append(
+    "### Third day (18 July), added in the 19 July run\n\n"
+    "Street actions recurred for a third day in at least Kyiv, Lviv, Kharkiv, Dnipro, Odesa, "
+    "Ivano-Frankivsk, Mykolaiv, Ternopil, Cherkasy, Khmelnytskyi, Kropyvnytskyi and Uzhhorod. "
+    "Kyiv ran from ~15:00 to «близько 2 тисяч» by 21:45 (Suspilne reporting Kyiv directly this time), "
+    "below the day-2 peak. **One band changed: Mykolaiv «понад 150 людей» (was 45 on day 1) crosses into "
+    "100–999.** Kharkiv police counted «близько 400» at 20:00, a wave high within the same band. "
+    "Solidarity rallies appeared **abroad** — Warsaw, Brussels, Sydney — outside the map's Ukraine-only "
+    "scope, noted not mapped. Rerunning the v3 discovery across the whole wave (gazetteer-grep of every "
+    "downloaded round-up, batch tier-A queries, targeted city searches) surfaced **no verifiable city "
+    "beyond the 25**: the four a rival Telegram map flagged (Irpin, Boryspil, Kalush, Drohobych) have no "
+    "round-up or city-level source, and every gazetteer hit was a false positive — the organiser's "
+    "surname «Козятинський», the President's name «Володимир», war-attack city lists.\n")
+
+b3.append("""### Fourth day (19 July), added on 19 July
+
+The wave did **not** end: on 19 July street actions ran for a fourth day in ~15 cities and drew the largest crowd of the whole wave in Kyiv — «понад 5000 людей» on Ivan Franko Square (Interfax-Ukraine via LIGA), above the day-2 peak, so Kyiv's figure and the wave peak update to day 4. Kharkiv «понад 400» (майдан Свободи) and Ivano-Frankivsk «приблизно 250» held their bands. **Three cities new to the map: Mukachevo** (LB, UP, 24 Kanal), **Kamianske** (5.ua) and **Uman** (found by the §4.2 gazetteer-grep of the day-4 round-ups — it sat in a 24 Kanal per-city subsection, not the comma-list) — both `unknown` count, both news-sourced (not Telegram). **Odesa surged to «близько тисячі людей»** on Derybasivska (24 Kanal, citing Suspilne), verified in the article body this time (not just a snippet) — a ~7× jump from day 1, so **Odesa crosses into 1000+** (marked contested: single-source, borderline). The round-up also gave day-4 highs: Lutsk «понад 300», Cherkasy «150», Kharkiv «450» (20:30) and Dnipro «понад 150». **Political outcome:** the Verkhovna Rada went into **recess to 18 August without appointing a defence minister** — Klymenko's candidacy was never submitted (Ivan Vyhivsky took the interior ministry) and **Yevhen Khmara remains acting**. The demand is unmet, so the protests continue.""")
 
 b3.append(COVERAGE)
 
