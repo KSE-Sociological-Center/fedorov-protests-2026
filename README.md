@@ -6,6 +6,14 @@ Event dates: 16 July – 6 August 2026 (ongoing, day 22). The protests are known
 
 Everything is in English **except verbatim quotes**, which stay in the original Ukrainian: the `quote_uk` column is defined as the outlet's exact words, and translating a quote turns evidence into paraphrase. English glosses live alongside in `quote_en`. Headlines are likewise kept as published.
 
+![Protest map, 16 July – 6 August 2026](data/2026-07-16-fedorov/map.png)
+
+Each dot is a city's **peak over the whole wave**, not a single day. Both graphics are generated from the CSVs — see §4.
+
+![Approximate turnout by day, 16 July – 6 August 2026](data/2026-07-16-fedorov/chart_by_day.png)
+
+Approximate aggregate turnout by day, Kyiv shown separately as it dominates every day. The series peaks twice: **only the second crest, 31 July, is about turnout.** The 19 July crest is higher only because ten cities published a figure that day against eight on 31 July — later days undercount non-Kyiv cities, so those totals are lower bounds. Gaps are days no city was counted, not days without protest.
+
 ## 1. Data source
 
 **Population.** Publications by Ukrainian media (national, regional, local) covering protests connected to Fedorov leaving office. English-language agencies (Interfax-Ukraine, Kyiv Post, AFP, AP) are included to cross-check the Kyiv figure.
@@ -177,11 +185,7 @@ python check_consistency.py data/2026-07-16-fedorov
 
 Borders: Natural Earth 10m admin_1, 24 oblasts plus Kyiv, Crimea and Sevastopol, dissolved into a national outline with `shapely`. Natural Earth assigns Crimea and Sevastopol to Russia; this dataset renders them as Ukraine.
 
-![Protest map, 16 July – 6 August 2026](data/2026-07-16-fedorov/map.png)
-
-Approximate aggregate turnout by day (Kyiv shown separately, as it dominates each day; later days undercount non-Kyiv cities, so those totals are lower bounds):
-
-![Approximate turnout by day, 16 July – 6 August 2026](data/2026-07-16-fedorov/chart_by_day.png)
+Both graphics are at the top of this page.
 
 ## 5. Limitations
 
