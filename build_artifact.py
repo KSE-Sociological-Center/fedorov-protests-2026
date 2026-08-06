@@ -16,6 +16,10 @@ SNAPSHOT = META["snapshot"]
 AUTHOR = META["author_en"]
 
 cities = list(csv.DictReader(io.open(ds("cities.csv"), encoding="utf-8")))
+# counted only for the schema.org/Dataset block at the foot of this file
+pubs = list(csv.DictReader(io.open(ds("publications.csv"), encoding="utf-8")))
+with io.open(ds("by_day.csv"), encoding="utf-8") as _f:
+    NDAYS = len([c for c in csv.DictReader(_f).fieldnames if c and c != "city"])
 ORDER = {"5000+": 0, "1000–4999": 1, "100–999": 2, "<100": 3, "unknown": 4, "online": 5}
 cities.sort(key=lambda c: (ORDER.get(c["category"], 9), c["city"]))
 live = [c["city"] for c in cities if c["status"].startswith("ongoing")]
@@ -241,5 +245,87 @@ out = (HTML.replace("__DATA__", j(DATA))
            .replace("__AUTHOR__", AUTHOR)
            .replace("__TITLE__", META["title_en"])
            .replace("__SUBTITLE__", META["subtitle_en"]))
+
+# ---- schema.org/Dataset ---------------------------------------------------------
+# Google Dataset Search reads JSON-LD, not prose: without this block the dataset is
+# invisible to it no matter how the README is written. Repo-level URLs, so they live
+# here rather than in the dataset's meta.json.
+REPO = "https://github.com/KSE-Sociological-Center/fedorov-protests-2026"
+SITE = "https://kse-sociological-center.github.io/fedorov-protests-2026/"
+RAW = REPO.replace("github.com", "raw.githubusercontent.com") + "/main/" + DS.replace("\\", "/")
+
+first = min((c["first_day"] for c in cities if c.get("first_day")), default="")
+last = max((c["last_day"] for c in cities if c.get("last_day")), default="")
+LD = {
+    "@context": "https://schema.org/",
+    "@type": "Dataset",
+    "name": "%s / %s" % (META["title"], META["title_en"]),
+    "alternateName": [META["subtitle"], META["subtitle_en"], "Картонкові протести",
+                      "Cardboard protests"],
+    "description": (
+        "Датасет публікацій українських ЗМІ про «картонкові протести» проти звільнення "
+        "Михайла Федорова з посади міністра оборони України, %s. %d публікацій, %d міст, "
+        "%d днів: місто, оцінка кількості учасників, дослівна цитата джерела, посилання. "
+        "Дані зібрані з національних, регіональних і місцевих медіа. — A dataset of Ukrainian "
+        "media publications on the «cardboard protests» over Mykhailo Fedorov's departure from "
+        "the Defence Ministry: %d publications, %d cities, city-level crowd-size estimates with "
+        "verbatim source quotes and links."
+    ) % (META["subtitle"], len(pubs), len(cities), NDAYS, len(pubs), len(cities)),
+    "url": SITE,
+    "sameAs": REPO,
+    "inLanguage": ["uk", "en"],
+    "isAccessibleForFree": True,
+    "license": "https://creativecommons.org/licenses/by/4.0/",
+    "keywords": [
+        "картонкові протести", "протести Федоров", "Михайло Федоров", "Міноборони",
+        "протести в Україні 2026", "мапа протестів", "кількість учасників протестів",
+        "моніторинг ЗМІ", "Україна", "cardboard protests", "Ukraine protests",
+        "Mykhailo Fedorov", "protest dataset", "media monitoring", "protest map",
+    ],
+    "temporalCoverage": "%s/%s" % (first or META["date"], last or META["date"]),
+    "spatialCoverage": {"@type": "Place", "name": "Ukraine",
+                        "geo": {"@type": "GeoShape", "box": "44.3 21.7 52.45 40.35"}},
+    "datePublished": META["date"],
+    "creator": {
+        "@type": "Person", "name": META["author_en"].split(",")[0].strip(),
+        "affiliation": {"@type": "Organization",
+                        "name": "Center for Sociological Research, KSE University",
+                        "url": "https://kse.ua/"},
+    },
+    "publisher": {"@type": "Organization", "name": "KSE University", "url": "https://kse.ua/"},
+    "distribution": [
+        {"@type": "DataDownload", "name": "cities.csv — one row per location",
+         "encodingFormat": "text/csv", "contentUrl": RAW + "/cities.csv"},
+        {"@type": "DataDownload", "name": "publications.csv — one row per publication x city",
+         "encodingFormat": "text/csv", "contentUrl": RAW + "/publications.csv"},
+        {"@type": "DataDownload", "name": "by_day.csv — approximate turnout per city per day",
+         "encodingFormat": "text/csv", "contentUrl": RAW + "/by_day.csv"},
+    ],
+    "variableMeasured": [
+        {"@type": "PropertyValue", "name": "category",
+         "description": "banded crowd-size estimate: 5000+, 1000-4999, 100-999, <100, unknown, online"},
+        {"@type": "PropertyValue", "name": "days_active",
+         "description": "distinct days on which a protest in that city is documented"},
+        {"@type": "PropertyValue", "name": "quote_uk",
+         "description": "verbatim crowd-size quote, in the original Ukrainian"},
+    ],
+}
+LDTAG = '<script type="application/ld+json">%s</script>\n' % json.dumps(
+    LD, ensure_ascii=False, indent=1)
+out = LDTAG + out
 io.open(ds("map.html"), "w", encoding="utf-8").write(out)
 print("cities: %d | still ongoing: %d | size: %d KB" % (len(cities), len(live), len(out.encode("utf-8")) // 1024))
+
+# ---- optional: the same page as the repo's GitHub Pages site --------------------
+if "--site" in sys.argv:
+    site = out.replace("<title>", '<link rel="canonical" href="%s">\n<meta name="description" '
+                       'content="%s">\n<meta property="og:image" content="%smap.png">\n<title>'
+                       % (SITE, LD["description"][:300].replace('"', "&quot;"), SITE), 1)
+    os.makedirs(os.path.join(HERE, "docs"), exist_ok=True)
+    io.open(os.path.join(HERE, "docs", "index.html"), "w", encoding="utf-8").write(site)
+    for f in ("map.png", "chart_by_day.png"):
+        src, dst = ds(f), os.path.join(HERE, "docs", f)
+        if os.path.exists(src):
+            io.open(dst, "wb").write(io.open(src, "rb").read())
+    io.open(os.path.join(HERE, "docs", ".nojekyll"), "w", encoding="utf-8").write("")
+    print("site: docs/index.html (+ map.png, chart_by_day.png)")

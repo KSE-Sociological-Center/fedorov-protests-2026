@@ -1,0 +1,46 @@
+Creative Commons Attribution 4.0 International (CC BY 4.0)
+==========================================================
+
+Applies to the DATA and the generated graphics in this repository:
+
+    data/**            cities.csv, publications.csv, by_day.csv, prose.md,
+                       report.md, map.png, map.html, chart_by_day.png, meta.json
+    gazetteer.csv
+    docs/**
+
+The source code (all *.py files) is licensed separately under the MIT License;
+see LICENSE.
+
+Copyright (c) 2026 Valentyn Hatsko, Center for Sociological Research, KSE University.
+
+You are free to share and adapt this material for any purpose, including
+commercially, provided you give appropriate credit, link to the licence, and
+indicate if changes were made.
+
+Full licence text: https://creativecommons.org/licenses/by/4.0/legalcode
+Summary:           https://creativecommons.org/licenses/by/4.0/
+
+Suggested attribution
+---------------------
+
+    Hatsko, V. (2026). Protests over Mykhailo Fedorov leaving the Defence
+    Ministry: a dataset of Ukrainian media publications, 16 July – 6 August 2026.
+    Center for Sociological Research, KSE University. CC BY 4.0.
+    https://github.com/KSE-Sociological-Center/fedorov-protests-2026
+
+Third-party material — IMPORTANT
+--------------------------------
+
+This licence covers the COMPILATION: the selection, coding, structuring and
+annotation of the records, and the graphics generated from them.
+
+It does NOT and cannot relicense the quoted material itself. The `quote_uk` and
+`headline_uk` fields contain short verbatim extracts from the publications of
+the outlets named in the `outlet` and `source` fields. Copyright in those
+extracts remains with those outlets. They are reproduced here as short
+attributed quotations for research and documentation, each with a link to the
+original publication, and should be treated as quotations rather than as
+CC BY-licensed content.
+
+Borders in the map come from Natural Earth (https://www.naturalearthdata.com/)
+and are in the public domain.

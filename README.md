@@ -1,10 +1,26 @@
-# fedorov-protests-2026
+# Картонкові протести за Федорова: датасет публікацій ЗМІ, 16 липня — 6 серпня 2026
 
-A dataset of the protests that followed Mykhailo Fedorov's departure from the post of Minister of Defence of Ukraine, compiled from media reports. Contains the collection prompt, the data, and scripts that generate the map and the report.
+**Protests over Mykhailo Fedorov leaving the Defence Ministry — a dataset of Ukrainian media publications**
+
+[Інтерактивна мапа](https://kse-sociological-center.github.io/fedorov-protests-2026/) · [Дані (CSV)](data/2026-07-16-fedorov) · [Звіт](data/2026-07-16-fedorov/report.md) · [Методологія](#3-value-assignment)
+
+## Про датасет
+
+Датасет **«картонкових протестів»** — акцій проти звільнення Михайла Федорова з посади міністра оборони України, що тривають з 16 липня 2026 року. Зібраний з публікацій українських національних, регіональних і місцевих ЗМІ.
+
+**819 публікацій · 127 доменів · 33 міста · 22 дні поспіль.** Одиниця спостереження — публікація × місто. Для кожного запису: місто, оцінка кількості учасників, **дослівна цитата** українською, з якої взято цифру, її атрибуція та тип джерела, посилання на оригінал. Для кожного міста — пік за всю хвилю і скільки днів протест задокументовано.
+
+Пік хвилі — **31 липня**, всеукраїнська «Єдина протестна хода»: у Києві «близько 6 тисяч осіб» за **оцінкою поліції** — єдина офіційна цифра за всю хвилю. Того ж дня Зеленський вивів Федорова зі складу РНБО.
+
+Що всередині: `cities.csv` (міста), `publications.csv` (публікації), `by_day.csv` (динаміка по днях), промт збору, скрипти генерації мапи і звіту.
+
+**Ліцензія:** дані — [CC BY 4.0](LICENSE-DATA), код — [MIT](LICENSE). Цитати належать відповідним виданням.
+
+---
 
 Event dates: 16 July – 6 August 2026 (ongoing, day 22). The protests are known as «cardboard protests» after the handwritten signs their participants carried.
 
-Everything is in English **except verbatim quotes**, which stay in the original Ukrainian: the `quote_uk` column is defined as the outlet's exact words, and translating a quote turns evidence into paraphrase. English glosses live alongside in `quote_en`. Headlines are likewise kept as published.
+**The rest of this file is in English**, as is the dataset itself — **except verbatim quotes**, which stay in the original Ukrainian: the `quote_uk` column is defined as the outlet's exact words, and translating a quote turns evidence into paraphrase. English glosses live alongside in `quote_en`. Headlines are likewise kept as published.
 
 ![Protest map, 16 July – 6 August 2026](data/2026-07-16-fedorov/map.png)
 
@@ -156,7 +172,8 @@ gazetteer.csv                   generated: cities ≥20k, tiers A/B, declension-
 geo.py                          borders and oblasts, Natural Earth 10m admin_1
 build_map.py                    cities.csv        → map.png
 build_report.py                 both CSVs + prose → report.md
-build_artifact.py               cities.csv        → map.html
+build_artifact.py               cities.csv        → map.html + schema.org/Dataset JSON-LD
+                                --site also       → docs/ (the GitHub Pages site)
 build_chart.py                  by_day.csv        → chart_by_day.png
 check_consistency.py            verifies the artifacts against each other
 data/2026-07-16-fedorov/
@@ -179,7 +196,7 @@ The build scripts live at the root and are dataset-agnostic. Each takes the data
 pip install pillow
 python build_map.py        data/2026-07-16-fedorov
 python build_report.py     data/2026-07-16-fedorov
-python build_artifact.py   data/2026-07-16-fedorov
+python build_artifact.py   data/2026-07-16-fedorov --site   # --site also writes docs/
 python check_consistency.py data/2026-07-16-fedorov
 ```
 
@@ -211,10 +228,21 @@ Both graphics are at the top of this page.
 
 **Categorical scale.** The lower three bands (`<100`, `100–999`, and the 1000 boundary) follow the reference map of the protests against law 12414; the fourth, splitting the top band at 5000, was added in the 6 August run and is this dataset's own. **Comparisons with the law-12414 map should therefore merge `1000–4999` and `5000+` back into a single `1000+`.** The boundary at 100 falls where the data clusters, so some locations are coded by the convention in §3.1 rather than by an exact count. Only Kyiv occupies the top band, and only on 19 and 31 July.
 
-## Authorship
+## Authorship and licence
 
 Data and map: Valentyn Hatsko, Center for Sociological Research, KSE University.
 Borders: [Natural Earth](https://www.naturalearthdata.com/), public domain.
-Quotes belong to the respective outlets; links point to the original publications.
+
+**Data and generated graphics** — [CC BY 4.0](LICENSE-DATA). **Code** (`*.py`) — [MIT](LICENSE).
+Quotes belong to the respective outlets; links point to the original publications. The CC BY
+licence covers the compilation — the selection, coding and annotation of the records — not the
+quoted extracts themselves, which remain the outlets' and are reproduced as attributed
+quotations. See [LICENSE-DATA](LICENSE-DATA).
+
+To cite, use [CITATION.cff](CITATION.cff) or GitHub's "Cite this repository" button:
+
+> Hatsko, V. (2026). *Protests over Mykhailo Fedorov leaving the Defence Ministry: a dataset of
+> Ukrainian media publications, 16 July – 6 August 2026.* Center for Sociological Research,
+> KSE University. CC BY 4.0.
 
 *Protest sizes are approximate. The project is ongoing; some locations may be missing.*

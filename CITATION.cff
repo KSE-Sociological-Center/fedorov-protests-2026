@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+message: "If you use this dataset, please cite it as below."
+type: dataset
+title: >-
+  Protests over Mykhailo Fedorov leaving the Defence Ministry:
+  a dataset of Ukrainian media publications, 16 July – 6 August 2026
+abstract: >-
+  A dataset of publications by Ukrainian national, regional and local media on the
+  «cardboard protests» (картонкові протести) that followed Mykhailo Fedorov's
+  departure from the post of Minister of Defence of Ukraine. 819 publications across
+  127 domains, 33 locations and 22 consecutive days. The unit of observation is
+  publication × city; each record carries a banded crowd-size estimate, the verbatim
+  Ukrainian quote the figure comes from, its attribution and provenance, and a link
+  to the original publication. Location-level records additionally carry the peak
+  over the wave and how long the protest is documented as lasting.
+authors:
+  - family-names: Hatsko
+    given-names: Valentyn
+    affiliation: "Center for Sociological Research, KSE University"
+date-released: "2026-08-06"
+version: "2026-08-06"
+license: CC-BY-4.0
+license-url: "https://creativecommons.org/licenses/by/4.0/"
+repository-code: "https://github.com/KSE-Sociological-Center/fedorov-protests-2026"
+url: "https://kse-sociological-center.github.io/fedorov-protests-2026/"
+keywords:
+  - protest
+  - Ukraine
+  - media monitoring
+  - content analysis
+  - protest event analysis
+  - crowd size
+  - open data
+  - Mykhailo Fedorov
+  - cardboard protests
+  - картонкові протести
