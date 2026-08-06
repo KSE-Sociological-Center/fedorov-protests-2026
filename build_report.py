@@ -51,11 +51,15 @@ for c in cities:
         t1.append("")
 
 # ---- Table 2 ---------------------------------------------------------------
-t2 = ["| City | Oblast | Category | Quote (verbatim) | Time | Contested | Status | Source |",
-      "|---|---|---|---|---|---|---|---|"]
+t2 = ["| City | Oblast | Category | Quote (verbatim) | Peak | Days | Contested | Status | Source |",
+      "|---|---|---|---|---|---|---|---|---|"]
 for c in cities:
-    t2.append("| **%s** | %s | **%s** | «%s» | %s | %s | %s | [%s](%s) |" % (
+    span = ""
+    if c.get("first_day") and c.get("last_day"):
+        span = "%s–%s" % (c["first_day"][5:], c["last_day"][5:])
+    t2.append("| **%s** | %s | **%s** | «%s» | %s | %s | %s | %s | [%s](%s) |" % (
         c["city"], c["oblast"], c["category"], esc(c["quote_uk"]), c["time"],
+        "**%s** (%s)" % (c.get("days_active", "?"), span) if span else c.get("days_active", "?"),
         "⚠️ **yes**" if c["contested"] == "yes" else "no",
         esc(c["status"]), esc(c["source"]), c["link"]))
 
@@ -65,6 +69,11 @@ t2.append("")
 t2.append("**Distribution:** " + " · ".join("%s — %d" % (k, dist.get(k, 0))
           for k in ["1000+", "100–999", "<100", "unknown", "online"]) +
           " · **total — %d**" % len(cities))
+_dur = [(int(c.get("days_active") or 0), c["city"]) for c in cities]
+t2.append("")
+t2.append("**Most persistent locations** (days on which a protest there is documented by at "
+          "least one publication in this dataset): " +
+          " · ".join("%s %d" % (n, d) for d, n in sorted(_dur, reverse=True)[:8]))
 
 # ---- Block 3 ------------------------------------------------------------------
 doms = sorted({r["link"].split("/")[2].replace("www.", "") for r in pubs if r["link"].startswith("http")})

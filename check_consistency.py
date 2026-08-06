@@ -78,15 +78,57 @@ if os.path.exists(rep_path):
     else:
         warns.append("no TABLE2 markers in report")
 
-# 9. by_day.csv (chart source) cities must all exist in the canon
+# 9. by_day.csv (chart source): cities in the canon, day columns a gapless date run
 bd_path = ds("by_day.csv")
+DAYS = []
 if os.path.exists(bd_path):
-    bd = list(csv.DictReader(io.open(bd_path, encoding="utf-8")))
+    with io.open(bd_path, encoding="utf-8") as f:
+        rdr = csv.DictReader(f)
+        DAYS = [c for c in rdr.fieldnames if c and c != "city"]
+        bd = list(rdr)
     bd_orphans = sorted({r["city"] for r in bd} - set(canon))
     if bd_orphans:
         errors.append("by_day.csv cities missing from canon: %s" % ", ".join(bd_orphans))
     if not any(r["city"] == "Kyiv" for r in bd):
         warns.append("by_day.csv has no Kyiv row")
+    import datetime
+    try:
+        ds_dates = [datetime.date(2026, int(c[:2]), int(c[3:])) for c in DAYS]
+    except Exception:
+        errors.append("by_day.csv day columns are not MM-DD dates: %s" % DAYS[:3])
+        ds_dates = []
+    for a, b in zip(ds_dates, ds_dates[1:]):
+        if (b - a).days != 1:
+            errors.append("by_day.csv skips a day between %s and %s" % (a, b))
+    if ds_dates:
+        first = min(c["first_day"] for c in cities if c.get("first_day"))
+        if first[5:] != DAYS[0]:
+            warns.append("by_day starts %s, earliest city first_day is %s" % (DAYS[0], first))
+    for r in bd:
+        for c in DAYS:
+            v = (r.get(c) or "").strip()
+            if v and not v.isdigit():
+                errors.append("by_day.csv non-numeric value %r for %s %s" % (v, r["city"], c))
+
+# 10. duration fields must be internally consistent and inside the period
+if DAYS and cities and "days_active" in cities[0]:
+    span = len(DAYS)
+    for c in cities:
+        n = c.get("days_active", "")
+        if not n.isdigit():
+            errors.append("%s: days_active is not a number (%r)" % (c["city"], n))
+            continue
+        if int(n) > span:
+            errors.append("%s: days_active %s exceeds the %d-day period" % (c["city"], n, span))
+        lo, hi = "2026-" + DAYS[0], "2026-" + DAYS[-1]
+        for f in ("first_day", "last_day", "peak_day"):
+            v = c.get(f, "")
+            if v and not (lo <= v <= hi):
+                errors.append("%s: %s = %s falls outside %s..%s" % (c["city"], f, v, lo, hi))
+        if c.get("first_day") and c.get("last_day") and c["first_day"] > c["last_day"]:
+            errors.append("%s: first_day after last_day" % c["city"])
+        if int(n) == 0:
+            errors.append("%s: days_active is 0 but the city is in the canon" % c["city"])
 
 print("canon: %d locations | publications: %d" % (len(cities), len(pubs)))
 print("distribution: " + " · ".join("%s %d" % kv for kv in dist.most_common()) + " = %d" % sum(dist.values()))

@@ -37,6 +37,8 @@ LABEL_DIR = {
     "Vinnytsia": "right", "Chernihiv": "up", "Kryvyi Rih": "down",
     "Kremenchuk": "down", "Kherson": "down",
     "Mukachevo": "down", "Kamianske": "up", "Uman": "down",
+    "Izmail": "left", "Kalush": "up", "Sheptytskyi": "left",
+    "Oleksandriia": "left", "Kamianets-Podilskyi": "down",
 }
 
 def font(names, size):
@@ -166,9 +168,11 @@ def T(x, y, s, f, fill, anchor="ls"):
     d.text((x * S, y * S), s, font=f, fill=fill, anchor=anchor)
 
 n_live = sum(1 for c in CITIES if c["status"].startswith("ongoing"))
-SUBLINE = "%s. Protests in %d cities; figures are the peak over the four-day wave." % (META["subtitle_en"], len(CITIES))
-LIVELINE = ("As of %s the wave is ongoing — a fourth day (16–19 July), with Kyiv drawing 5000+ "
-            "and the Defence Ministry still unfilled (Khmara acting; Rada in recess to 18 Aug)." % SNAPSHOT)
+SUBLINE = ("%s. Protests in %d cities; figures are each city's peak over the 22-day wave."
+           % (META["subtitle_en"], len(CITIES)))
+LIVELINE = ("As of %s the wave is in its 22nd consecutive day. The peak was the all-Ukrainian "
+            "march of 31 July — Kyiv «близько 6 тисяч» (police). The ministry is still unfilled."
+            % SNAPSHOT)
 T(28, 62, META["title_en"], F_TITLE, BLACK)
 T(28, 92, SUBLINE, F_SUB, GREY)
 T(28, 117, LIVELINE, F_META, BLACK)

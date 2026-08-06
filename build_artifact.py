@@ -27,11 +27,16 @@ LABEL_DIR = {
     "Uzhhorod": "right", "Rivne": "right", "Mykolaiv": "left", "Chernivtsi": "down",
     "Zhytomyr": "up", "Sumy": "right", "Kolomyia": "down", "Vinnytsia": "right",
     "Chernihiv": "up", "Kryvyi Rih": "down", "Kremenchuk": "down", "Kherson": "down",
+    "Mukachevo": "down", "Kamianske": "up", "Uman": "down",
+    "Izmail": "left", "Kalush": "up", "Sheptytskyi": "left",
+    "Oleksandriia": "left", "Kamianets-Podilskyi": "down",
 }
 
 DATA = [dict(n=c["city"], ob=c["oblast"], lat=float(c["lat"]), lon=float(c["lon"]),
              cat=c["category"], q=c["quote_uk"], qen=c["quote_en"], t=c["time"], src=c["source"],
              url=c["link"], contested=c["contested"] == "yes", status=c["status"],
+             days=c.get("days_active", ""), first=c.get("first_day", ""),
+             last=c.get("last_day", ""), peak=c.get("peak_day", ""),
              note=c["note"], dir=LABEL_DIR.get(c["city"], "down")) for c in cities]
 
 HTML = """<title>__TITLE__ — map</title>
@@ -111,13 +116,13 @@ HTML = """<title>__TITLE__ — map</title>
 <div class="wrap">
   <header style="display:flex;flex-direction:column;gap:8px">
     <h1>__TITLE__</h1>
-    <p class="sub">__SUBTITLE__. Protests in __N__ cities. Figures are the peak over the three-day wave (16–18 July).</p>
-    <p class="live">Protests are ongoing, figures are preliminary. Snapshot at __SNAP__: in __LIVE__ cities the action had not ended. Kherson protested online.</p>
+    <p class="sub">__SUBTITLE__. Protests in __N__ cities. Figures are each city's peak over the wave.</p>
+    <p class="live">Protests are ongoing, figures are preliminary. Snapshot at __SNAP__: in __LIVE__ cities the action was still running. Kherson protested online.</p>
   </header>
   <div class="rule"></div>
   <div class="field">
     <div class="mapbox">
-      <svg id="map" viewBox="0 0 1000 690" role="img" aria-label="Map of Ukraine showing cities where protests took place on 16 July 2026">
+      <svg id="map" viewBox="0 0 1000 690" role="img" aria-label="Map of Ukraine showing cities where protests took place during the wave">
         <g id="land"></g><g id="dots"></g>
       </svg>
     </div>
@@ -141,7 +146,7 @@ HTML = """<title>__TITLE__ — map</title>
   <div class="tablewrap">
     <table>
       <caption>Summary by city. Each figure is the daily peak: agreed across several independent sources, latest, largest. Quotes are verbatim as published.</caption>
-      <thead><tr><th>City</th><th>Category</th><th>Quote (verbatim)</th><th>Time</th><th>Status</th><th>Source</th></tr></thead>
+      <thead><tr><th>City</th><th>Category</th><th>Quote (verbatim)</th><th>Peak</th><th>Days</th><th>Status</th><th>Source</th></tr></thead>
       <tbody id="tb"></tbody>
     </table>
   </div>
@@ -182,8 +187,11 @@ const CITIES = __DATA__, LAND = __LAND__, COUNTRY = __COUNTRY__;
 
  const dots=document.getElementById("dots"), det=document.getElementById("detail");
  function render(c){
+   const dur=c.days?(c.days+(c.days==="1"?" day":" days")+" documented, "
+     +(c.first||"?").slice(5)+"–"+(c.last||"?").slice(5)):"";
    det.innerHTML='<p class="city">'+c.n+(c.contested?'<span class="chip">contested</span>':'')+'</p>'
     +'<p class="ob">'+c.ob+' · '+c.cat+' · '+c.status+'</p>'
+    +(dur?'<p class="ob">'+dur+(c.peak?' · peak '+c.peak.slice(5):'')+'</p>':'')
     +'<blockquote>«'+c.q+'»</blockquote>'
     +(c.qen?'<p class="gloss">'+c.qen+'</p>':'')
     +'<div class="meta"><span>as of '+c.t+'</span>'
@@ -212,6 +220,7 @@ const CITIES = __DATA__, LAND = __LAND__, COUNTRY = __COUNTRY__;
    const tr=document.createElement("tr");
    tr.innerHTML='<td class="c"><b>'+c.n+'</b>'+(c.contested?'<span class="chip">contested</span>':'')+'</td>'
     +'<td class="c">'+c.cat+'</td><td class="q">«'+c.q+'»</td><td class="c">'+c.t+'</td>'
+    +'<td class="c">'+(c.days||'')+'</td>'
     +'<td class="c">'+c.status+'</td>'
     +'<td><a href="'+c.url+'" target="_blank" rel="noopener noreferrer">'+c.src+'</a></td>';
    tr.addEventListener("mouseenter",()=>render(c));
