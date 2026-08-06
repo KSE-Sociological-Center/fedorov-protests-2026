@@ -35,7 +35,7 @@ Everything is in English **except verbatim quotes**, which stay in the original 
 | `city` | text | Kyiv, Kharkiv, … |
 | `oblast` | text | Kyiv City, Kharkiv, … |
 | `lat`, `lon` | float | coordinates, WGS84 |
-| `category` | categorical | `1000+` · `100–999` · `<100` · `unknown` · `online` |
+| `category` | categorical | `5000+` · `1000–4999` · `100–999` · `<100` · `unknown` · `online` |
 | `quote_uk` | text | verbatim, as published: «близько 300 людей, їхня кількість збільшується» |
 | `quote_en` | text | English gloss: "about 300 people, and their number is growing" |
 | `time` | time | the moment the figure is valid for |
@@ -58,7 +58,7 @@ Everything is in English **except verbatim quotes**, which stay in the original 
 | `link` | URL | publication |
 | `published` | text | publication time, with update time where given |
 | `quote_uk` | text | verbatim quote about the crowd size |
-| `category` | categorical | `unknown` (566) · `100–999` (123) · `<100` (89) · `1000+` (41) |
+| `category` | categorical | `unknown` (572) · `100–999` (126) · `<100` (89) · `1000–4999` (29) · `5000+` (3) |
 | `status` | categorical | `took place` (811) · `ongoing` (5) · `online` (1) · `refuted` (1) · `announced` (1) |
 | `provenance` | categorical | `not stated` (381) · `own correspondent` (257) · `relay` (164) · `police` (13) · `open-source photo` (4) |
 | `provenance_detail_uk` | text | raw attribution as published: «речниця поліції Харківщини Людмила Прокопенко» |
@@ -79,6 +79,8 @@ Each condition alone produces a systematic error:
 | source agreement | reprint mistaken for confirmation | the national round-up copies the regional desk verbatim |
 
 The `<100` / `100–999` boundary falls where the data clusters: the modal phrasing in Ukrainian media is «близько сотні» (about a hundred). Convention: «близько сотні» codes as `100–999`, applied uniformly to all locations.
+
+The `1000–4999` / `5000+` boundary was added in the 6 August run, when the old top band had come to span an order of magnitude — Odesa's «близько тисячі» and Kyiv's «близько 6 тисяч» sat in the same category. 5000 is a round number that falls in a real gap in this dataset: no city was ever reported between 1400 and 5000, and above 5000 there is only Kyiv, on two days.
 
 ### 3.2 `time`
 
@@ -203,7 +205,7 @@ Approximate aggregate turnout by day (Kyiv shown separately, as it dominates eac
 
 **Sparse figures in the later days.** 566 of 819 publication rows carry no crowd figure. This is a property of the coverage, not of the collection: as the wave aged, outlets kept reporting that a protest had happened and stopped counting who came. 504 of the 669 rows added on 6 August carry `невідомо` for that reason.
 
-**Categorical scale.** The three bands (`<100`, `100–999`, `1000+`) follow the reference map of the protests against law 12414. The boundary at 100 falls where the data clusters, so some locations are coded by the convention in §3.1 rather than by an exact count.
+**Categorical scale.** The lower three bands (`<100`, `100–999`, and the 1000 boundary) follow the reference map of the protests against law 12414; the fourth, splitting the top band at 5000, was added in the 6 August run and is this dataset's own. **Comparisons with the law-12414 map should therefore merge `1000–4999` and `5000+` back into a single `1000+`.** The boundary at 100 falls where the data clusters, so some locations are coded by the convention in §3.1 rather than by an exact count. Only Kyiv occupies the top band, and only on 19 and 31 July.
 
 ## Authorship
 

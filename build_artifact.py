@@ -16,7 +16,7 @@ SNAPSHOT = META["snapshot"]
 AUTHOR = META["author_en"]
 
 cities = list(csv.DictReader(io.open(ds("cities.csv"), encoding="utf-8")))
-ORDER = {"1000+": 0, "100–999": 1, "<100": 2, "unknown": 3, "online": 4}
+ORDER = {"5000+": 0, "1000–4999": 1, "100–999": 2, "<100": 3, "unknown": 4, "online": 5}
 cities.sort(key=lambda c: (ORDER.get(c["category"], 9), c["city"]))
 live = [c["city"] for c in cities if c["status"].startswith("ongoing")]
 
@@ -133,7 +133,8 @@ HTML = """<title>__TITLE__ — map</title>
       <div class="panel">
         <h2>Legend</h2>
         <ul class="leg">
-          <li><span class="sw"><svg width="40" height="46" viewBox="0 0 40 46"><circle cx="20" cy="23" r="21" fill="var(--dot-fill)" stroke="var(--dot)" stroke-width="1.5"/></svg></span><span>1000+ participants</span></li>
+          <li><span class="sw"><svg width="40" height="46" viewBox="0 0 40 46"><circle cx="20" cy="23" r="21" fill="var(--dot-fill)" stroke="var(--dot)" stroke-width="1.5"/></svg></span><span>5000+ participants</span></li>
+          <li><span class="sw"><svg width="40" height="38" viewBox="0 0 40 38"><circle cx="20" cy="19" r="17" fill="var(--dot-fill)" stroke="var(--dot)" stroke-width="1.5"/></svg></span><span>1000–4999 participants</span></li>
           <li><span class="sw"><svg width="40" height="30" viewBox="0 0 40 30"><circle cx="20" cy="15" r="12" fill="var(--dot-fill)" stroke="var(--dot)" stroke-width="1.5"/></svg></span><span>100–999 participants</span></li>
           <li><span class="sw"><svg width="40" height="20" viewBox="0 0 40 20"><circle cx="20" cy="10" r="6.5" fill="var(--dot-fill)" stroke="var(--dot)" stroke-width="1.5"/></svg></span><span>fewer than 100</span></li>
           <li><span class="sw"><svg width="40" height="20" viewBox="0 0 40 20"><circle cx="20" cy="10" r="6.5" fill="none" stroke="var(--dot)" stroke-width="1.5" stroke-dasharray="3 3"/></svg></span><span>protest held, no count published</span></li>
@@ -178,7 +179,7 @@ const CITIES = __DATA__, LAND = __LAND__, COUNTRY = __COUNTRY__;
  LAND.forEach(r=>land.appendChild(el("path",{d:d(r),class:"land"})));
  COUNTRY.forEach(r=>land.appendChild(el("path",{d:d(r),class:"country"})));
 
- const R={"1000+":21,"100–999":12.5,"<100":6.5,"unknown":6.5,"online":6.5};
+ const R={"5000+":24,"1000–4999":17,"100–999":12.5,"<100":6.5,"unknown":6.5,"online":6.5};
  const place=(cx,cy,r,dir)=>{const G=6,L=11;
    if(dir==="up")   return {x:cx,a:"middle",y1:cy-r-G-L,y2:cy-r-G};
    if(dir==="down") return {x:cx,a:"middle",y1:cy+r+G+L,y2:cy+r+G+L*2};

@@ -20,7 +20,7 @@ cities = list(csv.DictReader(io.open(ds("cities.csv"), encoding="utf-8")))
 pubs   = list(csv.DictReader(io.open(ds("publications.csv"), encoding="utf-8")))
 prose  = io.open(ds("prose.md"), encoding="utf-8").read()
 
-ORDER = {"1000+": 0, "100–999": 1, "<100": 2, "unknown": 3, "online": 4}
+ORDER = {"5000+": 0, "1000–4999": 1, "100–999": 2, "<100": 3, "unknown": 4, "online": 5}
 cities.sort(key=lambda c: (ORDER.get(c["category"], 9), c["city"]))
 
 def esc(s):
@@ -67,7 +67,7 @@ dist = Counter(c["category"] for c in cities)
 assert sum(dist.values()) == len(cities), "distribution does not sum to the row count"
 t2.append("")
 t2.append("**Distribution:** " + " · ".join("%s — %d" % (k, dist.get(k, 0))
-          for k in ["1000+", "100–999", "<100", "unknown", "online"]) +
+          for k in ["5000+", "1000–4999", "100–999", "<100", "unknown", "online"]) +
           " · **total — %d**" % len(cities))
 _dur = [(int(c.get("days_active") or 0), c["city"]) for c in cities]
 t2.append("")
@@ -82,9 +82,9 @@ single = [c["city"] for c in cities if len(by_city.get(c["city"], [])) == 1]
 
 COVERAGE = """### Checked, no protest found (5)
 
-Drohobych, Kamianets-Podilskyi, Izmail, Bila Tserkva, Uman. (Mukachevo was here until day 4, when it protested — now on the map.)
+Drohobych, Bila Tserkva, Irpin, Boryspil, Pereiaslav. **Four of the original six have since protested and are now on the map:** Mukachevo (day 4), then Kamianets-Podilskyi, Izmail and Uman. Izmail is the sharpest correction — Suspilne Odesa states its rallies had run «з 16 липня», so it was protesting on day 1 while listed here as empty. Kalush, listed in the 19 July run as flagged-but-unverifiable, is also now on the map.
 
-**Not marked on the map, deliberately.** These six were checked only because they appeared in the prompt's city list. The remaining ~460 cities of Ukraine were not checked individually, so marking these six as checked-and-empty would claim a systematic negative survey that does not exist. Kremenchuk proves the point: not an oblast capital, a protest **did** take place, and it surfaced only by querying a local outlet directly.
+**Not marked on the map, deliberately.** These were checked only because they appeared in the prompt's city list or in a rival Telegram map. The remaining ~460 cities of Ukraine were not checked individually, so marking these as checked-and-empty would claim a systematic negative survey that does not exist. Kremenchuk proved the point on day 1: not an oblast capital, a protest **did** take place, and it surfaced only by querying a local outlet directly. Izmail and Kalush proved it again on days 1 and 4 — **a negative here means "not found", never "did not happen".**
 
 ### How other cities were searched for
 

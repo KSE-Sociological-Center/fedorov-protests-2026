@@ -83,7 +83,8 @@ oy = BY + (BH - (LAT0 - LAT1) * sc) / 2
 px = lambda lon: (ox + (lon - LON0) * KX * sc) * S
 py = lambda lat: (oy + (LAT0 - lat) * sc) * S
 
-R = {"1000+": 21, "100–999": 12.5, "<100": 6.5, "unknown": 6.5, "online": 6.5}
+R = {"5000+": 24, "1000–4999": 17, "100–999": 12.5, "<100": 6.5,
+     "unknown": 6.5, "online": 6.5}
 
 img = Image.new("RGB", (W * S, H * S), WHITE)
 d = ImageDraw.Draw(img)
@@ -181,14 +182,25 @@ d.line([28 * S, 136 * S, (W - 28) * S, 136 * S], fill=BLACK, width=max(1, S))
 # ---- legend -----------------------------------------------------------------
 LX, LY = 44, 812
 T(LX, LY, "LEGEND", F_LEGH, BLACK)
-rows = [
-    (40, 21,   "solid", False, "1000+ participants"),
-    (94, 12.5, "solid", False, "100–999 participants"),
-    (132, 6.5, "solid", False, "fewer than 100"),
-    (168, 6.5, "dash",  False, "protest held, no count published"),
-    (198, 6.5, "dot",   False, "online action (Kherson)"),
-    (228, 12.5,"solid", True,  "contested: sources disagree"),
+# Vertical offsets are DERIVED from the radii, not written down: adding a band used to
+# mean hand-shifting every row below it, and forgetting to made them overlap.
+SPEC = [
+    (R["5000+"],     "solid", False, "5000+ participants"),
+    (R["1000–4999"], "solid", False, "1000–4999 participants"),
+    (R["100–999"],   "solid", False, "100–999 participants"),
+    (R["<100"],      "solid", False, "fewer than 100"),
+    (6.5,            "dash",  False, "protest held, no count published"),
+    (6.5,            "dot",   False, "online action (Kherson)"),
+    (R["100–999"],   "solid", True,  "contested: sources disagree"),
 ]
+GAP = 14
+rows, y = [], 0.0
+for i, (r_, kind, ring, lab) in enumerate(SPEC):
+    eff = r_ + (4.5 if ring else 0)          # the contested ring sits outside the dot
+    y = eff + 16 if i == 0 else y + prev_eff + eff + GAP
+    rows.append((y, r_, kind, ring, lab))
+    prev_eff = eff
+
 for dy, r_, kind, ring, lab in rows:
     cx, cy = (LX + 22) * S, (LY + dy) * S
     rr = r_ * S
@@ -228,6 +240,13 @@ if foot_end + 16 > auth_start:
 # and does the land run into the footer
 land_bottom = (oy + (LAT0 - LAT1) * sc)
 if land_bottom > H - 40 - 6: over.append("land overlaps footer (+%dpx)" % int(land_bottom - (H - 46)))
+# legend rows must not overlap each other or run past the footer rule
+for (y1, r1, _, g1, l1), (y2, r2, _, g2, l2) in zip(rows, rows[1:]):
+    if (LY + y1) + r1 + (4.5 if g1 else 0) >= (LY + y2) - r2 - (4.5 if g2 else 0):
+        over.append("legend rows overlap: %s / %s" % (l1, l2))
+last_y, last_r, _, last_ring, _ = rows[-1]
+if LY + last_y + last_r + (4.5 if last_ring else 0) > H - 40:
+    over.append("legend runs past the footer rule")
 print("text overflowing canvas:", over or "none")
 
 # ---- self-check: label collisions -------------------------------------------------
