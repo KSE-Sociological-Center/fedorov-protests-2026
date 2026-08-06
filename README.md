@@ -2,7 +2,12 @@
 
 **Protests over Mykhailo Fedorov leaving the Defence Ministry — a dataset of Ukrainian media publications**
 
-[Інтерактивна мапа](https://kse-sociological-center.github.io/fedorov-protests-2026/) · [Дані (CSV)](data/2026-07-16-fedorov) · [Звіт](data/2026-07-16-fedorov/report.md) · [Методологія](#3-value-assignment)
+[Мапа](data/2026-07-16-fedorov/map.png) · [Дані (CSV)](data/2026-07-16-fedorov) · [Звіт](data/2026-07-16-fedorov/report.md) · [Методологія](#3-value-assignment)
+
+<!-- Коли увімкнете GitHub Pages (Settings → Pages → main /docs), поверніть у рядок вище
+     посилання на інтерактивну версію — вона вже зібрана в docs/index.html:
+     [Інтерактивна мапа](https://kse-sociological-center.github.io/fedorov-protests-2026/) · -->
+
 
 ## Про датасет
 
