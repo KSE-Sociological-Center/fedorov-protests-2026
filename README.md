@@ -16,7 +16,7 @@
 
 ![Щоденні пікові оцінки чисельності протестів у Києві](data/2026-07-16-fedorov/chart_peak_by_day.png)
 
-[Інтерактивна карта](https://kse-sociological-center.github.io/fedorov-protests-2026/) містить дослівні цитати, дати, статуси та посилання на джерела.
+[Інтерактивна карта](https://htmlpreview.github.io/?https://github.com/KSE-Sociological-Center/fedorov-protests-2026/blob/main/data/2026-07-16-fedorov/map.html) містить дослівні цитати, дати, статуси та посилання на джерела.
 
 ## Ключові результати
 
