@@ -21,7 +21,7 @@ META = json.load(io.open(ds("meta.json"), encoding="utf-8"))
 AUTHOR = META["author_en"]
 FDIR = r"C:\Windows\Fonts"
 S = 3
-W, H = 1500, 1100
+W, H = 1500, 910
 
 def font(names, size):
     for n in names:
@@ -70,8 +70,17 @@ counted = [k for k in DAYCOLS if tot[k] > 0]         # days with at least one fi
 
 img = Image.new("RGB", (W * S, H * S), WHITE)
 d = ImageDraw.Draw(img)
+qa_boxes = []
+
 def T(x, y, s, f, fill, anchor="ls"):
     d.text((x * S, y * S), s, font=f, fill=fill, anchor=anchor)
+
+def QT(name, x, y, s, f, fill, anchor="ls", inside_plot=False):
+    """Draw and register plot text for collision/bounds checks."""
+    T(x, y, s, f, fill, anchor)
+    box = tuple(v / S for v in d.textbbox((x * S, y * S), s, font=f, anchor=anchor))
+    qa_boxes.append((name, box, inside_plot))
+
 def line(pts, fill, w=1):
     d.line([(x * S, y * S) for x, y in pts], fill=fill, width=max(1, int(w * S)))
 def dashed_vline(x, y0, y1, fill=EVENT, w=1, on=5, off=5):
@@ -145,9 +154,9 @@ for i, k in enumerate(DAYCOLS):
               fill=WHITE, outline=BLACK, width=max(1, int(1.2 * S)))
     T(x, PY1 + 40, str(ncity[k]), F_SEG, GREY, anchor="ms")
     if k in crests:
-        T(x, y - 16, "~" + num(tot[k]), F_PEAK, BLACK, anchor="ms")
+        QT("total " + k, x, y - 16, "~" + num(tot[k]), F_PEAK, BLACK, anchor="ms")
     elif tot[k] >= 1200 or i in (0, n - 1):
-        T(x, y - 12, "~" + num(tot[k]), F_SEG, BLACK, anchor="ms")
+        QT("total " + k, x, y - 12, "~" + num(tot[k]), F_SEG, BLACK, anchor="ms")
 
 # month bands under the day numbers
 seg, prev = [], None
@@ -170,39 +179,38 @@ if MARCH in DAYCOLS and tot[MARCH]:
     note = "31 July · Kyiv march: ~6 000 (police)"
     nx = min(px + 18, PX1 - F_NOTE.getbbox(note)[2] / S)
     ny = max(PY0 + 8, py - 42)
-    T(nx, ny, note, F_NOTE, BLACK)
+    QT("31 July march", nx, ny, note, F_NOTE, BLACK, inside_plot=True)
     line([(px, py - 5), (nx, ny + 5)], GREY_L, 1)
 
+# Protest-event labels use short leaders and occupy the otherwise empty right half
+# of the data region. Political context keeps the full-height dashed rules, but its
+# labels also live in the plot instead of consuming two extra bands below it.
 event_notes = [
-    ("08-16", 808, "16 Aug · repeat march", "rs"),
-    ("08-18", 830, "18–19 Aug · final coordinated actions", "ls"),
-    (DAYCOLS[-1], 852, "29 Aug · late Dnipro action (~15)", "rs"),
+    ("08-16", 530, "16 Aug · repeat march", "rs"),
+    ("08-19", 610, "18–19 Aug · final coordinated actions", "ls"),
+    (DAYCOLS[-1], 650, "29 Aug · late Dnipro action (~15)", "rs"),
 ]
-T(28, 808, "PROTEST EVENTS", F_SEG, GREY_L)
 for k, yy, txt, anchor in event_notes:
     if k not in DAYCOLS:
         continue
     xx = sx(DAYCOLS.index(k))
     tx = xx - 7 if anchor == "rs" else xx + 7
-    line([(xx, PY1 + 78), (xx, yy - 7)], GREY_L, 1)
-    T(tx, yy, txt, F_NOTE, BLACK, anchor=anchor)
+    data_y = sy(tot[k]) if tot[k] else PY1
+    line([(xx, data_y - 5), (tx, yy + 5)], GREY_L, 1)
+    QT("protest " + k, tx, yy, txt, F_NOTE, BLACK, anchor=anchor, inside_plot=True)
 
-# Political context is a separate visual layer: thin dashed rules cross the plot,
-# while staggered labels below it keep adjacent 18–19 August events readable.
 political_events = [
-    ("07-22", 906, "22 Jul · Syrskyi removed; Drapatyi appointed", "ls"),
-    ("08-18", 930, "18 Aug · Fedorov calls for an election mechanism", "rs"),
-    ("08-19", 954, "19 Aug · Khmara appointed (312 votes)", "ls"),
+    ("07-22", 332, "22 Jul · Syrskyi removed; Drapatyi appointed", "ls"),
+    ("08-18", 284, "18 Aug · Fedorov calls for an election mechanism", "rs"),
+    ("08-19", 326, "19 Aug · Khmara appointed (312 votes)", "rs"),
 ]
-T(28, 884, "POLITICAL CONTEXT", F_SEG, GREY_L)
 for k, yy, txt, anchor in political_events:
     if k not in DAYCOLS:
         continue
     xx = sx(DAYCOLS.index(k))
     tx = xx - 7 if anchor == "rs" else xx + 7
     dashed_vline(xx, PY0, PY1, EVENT, 1, on=4, off=5)
-    dashed_vline(xx, PY1 + 78, yy - 7, EVENT, 1, on=4, off=5)
-    T(tx, yy, txt, F_NOTE, BLACK, anchor=anchor)
+    QT("political " + k, tx, yy, txt, F_NOTE, EVENT, anchor=anchor, inside_plot=True)
 
 # ---- legend ------------------------------------------------------------------
 lx, ly = PX0 + 16, 150
@@ -228,10 +236,22 @@ if 28 + F_FOOT.getbbox(CAV)[2] / S > W - 28:
     over.append("caveat overflows")
 if 2 * (PX1 - PX0) / max(1, n - 1) < F_DAY.getbbox("00")[2] / S + 2:
     over.append("day labels collide")
+for name, box, inside_plot in qa_boxes:
+    if inside_plot and (box[0] < PX0 or box[1] < PY0 or box[2] > PX1 or box[3] > PY1):
+        over.append("%s outside plot" % name)
+for i, (name_a, a, _) in enumerate(qa_boxes):
+    for name_b, b, _ in qa_boxes[i + 1:]:
+        gap = 4
+        separated = (a[2] + gap <= b[0] or b[2] + gap <= a[0]
+                     or a[3] + gap <= b[1] or b[3] + gap <= a[1])
+        if not separated:
+            over.append("text collision: %s / %s" % (name_a, name_b))
 print("days: %d (%s..%s) | counted: %d" % (n, DAYCOLS[0], DAYCOLS[-1], len(counted)))
 for k in crests:
     print("  crest %s = %d (Kyiv %d, %d cities counted)" % (k, tot[k], kyiv[k], ncity[k]))
 print("series:", " ".join("%s=%d" % (k, tot[k]) for k in DAYCOLS))
 print("text overflow:", over or "none")
+if over:
+    raise SystemExit("chart QA failed: " + "; ".join(over))
 img.resize((W, H), Image.LANCZOS).save(ds("chart_by_day.png"), "PNG", optimize=True)
 print("saved:", ds("chart_by_day.png"), os.path.getsize(ds("chart_by_day.png")) // 1024, "KB")
