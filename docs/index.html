@@ -139,18 +139,9 @@
   .mapbox { border:1px solid var(--rule); overflow-x:auto; padding:6px; }
   svg { display:block; width:100%; height:auto; }
   .maphint { display:none; margin:2px 6px 7px; color:var(--ink-3); font-size:11px; }
-  .peak-section { display:flex; flex-direction:column; gap:10px; }
-  .peak-section h2 { font-size:20px; font-weight:700; margin:0; letter-spacing:-.01em; }
-  .chartfigure { margin:0; }
-  .chartbox { border:1px solid var(--rule); overflow-x:auto; background:#fcfcfb; }
-  .peakchart { display:block; width:100%; height:auto; }
-  .charthint { display:none; margin:0 0 7px; color:var(--ink-3); font-size:11px; }
-  .chartfigure figcaption { color:var(--ink-3); font-size:12px; margin-top:7px; }
   @media (max-width:600px){
     #map { width:760px; max-width:none; }
     .maphint { display:block; }
-    .peakchart { width:920px; max-width:none; }
-    .charthint { display:block; }
   }
   .land { fill:var(--land); stroke:var(--oblast); stroke-width:.9; }
   .country { fill:none; stroke:var(--border); stroke-width:1.9; stroke-linejoin:round; }
@@ -231,18 +222,6 @@
       </div>
     </div>
   </div>
-  <section class="peak-section" aria-labelledby="peak-chart-title">
-    <h2 id="peak-chart-title">Daily peak crowd estimates in Kyiv</h2>
-    <figure class="chartfigure">
-      <p class="charthint">Scroll horizontally to read dates and event labels.</p>
-      <div class="chartbox">
-        <img class="peakchart" src="chart_peak_by_day.png"
-             alt="Column chart of daily peak crowd estimates at Kyiv protests from 16 July to 19 August 2026; the highest estimate is 6,000 on 31 July."
-             loading="lazy" decoding="async">
-      </div>
-      <figcaption>Blank days mean no usable Kyiv crowd estimate, not zero participants.</figcaption>
-    </figure>
-  </section>
   <div class="tablewrap">
     <table>
       <caption>Summary by city. Each figure is the city's peak over the full wave; quotes are verbatim as published.</caption>
