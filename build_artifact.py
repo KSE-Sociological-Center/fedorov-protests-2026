@@ -31,11 +31,12 @@ def pretty_date(value):
 
 last_day = max((c.get("last_day", "") for c in cities), default=META["last_action"])
 last_cities = [c["city"] for c in cities if c.get("last_day") == last_day]
-TITLE = "Documented protest locations and peak crowd bands"
+TITLE = "Protest locations and peak turnout"
+SUBTITLE = META["subtitle_en"].replace(" — ", "–")
 COORD_END = pretty_date(META["coordinated_end"])
 LAST_ACTION = pretty_date(last_day)
-STATUS_LINE = ("Collection checked through %s. Last documented coordinated multi-city actions: %s; "
-               "latest local action: %s, %s. Kherson protested online." %
+STATUS_LINE = ("We checked Ukrainian media through %s. Ukrainian outlets last reported coordinated "
+               "actions on %s and one later local action in %s on %s. Kherson joined online." %
                (SNAPSHOT, COORD_END, ", ".join(last_cities), LAST_ACTION))
 
 LABEL_DIR = {
@@ -50,17 +51,49 @@ LABEL_DIR = {
     "Oleksandriia": "left", "Kamianets-Podilskyi": "down",
 }
 
+# The CSV keeps full audit notes. The public map shows only facts that help a reader
+# interpret an unusual estimate or endpoint.
+WEB_NOTES = {
+    "Kyiv": ("Police counted about 6,000 people at the 31 July march. Published estimates ranged "
+             "from about 1,000 to an organiser claim of 15,000, so we mark Kyiv as contested. "
+             "A repeat march on 16 August drew about 1,000–1,500 people; the last Kyiv action was 19 August."),
+    "Kharkiv": ("MediaPort watched the crowd grow from about 100 to about 300 within half an hour. "
+                "Suspilne's national roundup also reported at least 300. Later reports put the city peak "
+                "at about 450 on 19 July."),
+    "Dnipro": ("Dnipro had 35 documented action days. About 15 people attended a local action on "
+               "29 August; we found no later event."),
+    "Odesa": ("One report put the 19 July crowd at about 1,000. The estimate sits on the category "
+              "boundary and lacks a second source, so we mark Odesa as contested."),
+    "Poltava": ("Published estimates differ. We use Suspilne's report of about 130 people on "
+                "20 July and mark the city as contested."),
+    "Uzhhorod": ("A headline reported 200 people, but the article body gave no count. We use the "
+                 "police estimate of about 50 from 16 July."),
+    "Sumy": ("Residents used small pickets and left cardboard signs around the city because of the "
+             "security situation."),
+    "Kherson": ("Kherson residents joined online because a street gathering was unsafe. We found no "
+                "street action during the collection period."),
+    "Kamianets-Podilskyi": ("Two reports confirm local actions, but neither gives a crowd count. We "
+                            "could not retrieve the original ZHAR.INFO article."),
+}
+unknown_web_notes = sorted(set(WEB_NOTES) - {c["city"] for c in cities})
+if unknown_web_notes:
+    raise SystemExit("web notes refer to unknown cities: " + ", ".join(unknown_web_notes))
+contested_without_note = sorted(c["city"] for c in cities
+                                if c["contested"] == "yes" and c["city"] not in WEB_NOTES)
+if contested_without_note:
+    raise SystemExit("contested cities need a short web note: " + ", ".join(contested_without_note))
+
 DATA = [dict(n=c["city"], ob=c["oblast"], lat=float(c["lat"]), lon=float(c["lon"]),
              cat=c["category"], q=c["quote_uk"], qen=c["quote_en"], t=c["time"], src=c["source"],
              url=c["link"], contested=c["contested"] == "yes", status=c["status"],
              days=c.get("days_active", ""), first=c.get("first_day", ""),
              last=c.get("last_day", ""), peak=c.get("peak_day", ""),
-             note=c["note"], dir=LABEL_DIR.get(c["city"], "down")) for c in cities]
+             note=WEB_NOTES.get(c["city"], ""), dir=LABEL_DIR.get(c["city"], "down")) for c in cities]
 
 HTML = """<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>__TITLE__ — map</title>
+<title>__TITLE__ | map</title>
 <style>
   :root {
     --paper:#fff; --ink:#111; --ink-2:#555; --ink-3:#8a8a8a;
@@ -150,20 +183,20 @@ HTML = """<!doctype html>
 <div class="wrap">
   <header style="display:flex;flex-direction:column;gap:8px">
     <h1>__TITLE__</h1>
-    <p class="sub">__SUBTITLE__. __N__ locations over a __DAYS__-day calendar span; figures are each city's peak.</p>
+    <p class="sub">__SUBTITLE__. We plot the highest estimate we could verify for each of __N__ locations.</p>
     <p class="live">__STATUS__</p>
   </header>
   <div class="rule"></div>
   <div class="field">
     <div class="mapbox">
-      <p class="maphint">Scroll horizontally to read direct labels; tap a city for its source.</p>
-      <svg id="map" viewBox="0 0 1000 690" role="img" aria-label="Map of __N__ documented protest locations and their peak crowd bands">
+      <p class="maphint">Swipe sideways to see the full map. Tap a city for its source.</p>
+      <svg id="map" viewBox="0 0 1000 690" role="img" aria-label="Map of __N__ protest locations and their peak turnout bands">
         <g id="land"></g><g id="dots"></g>
       </svg>
     </div>
     <div style="display:flex;flex-direction:column;gap:20px">
       <div class="panel" id="detail" aria-live="polite">
-        <p class="idle">Hover a city for the verbatim quote, the time it is valid for, and the source.</p>
+        <p class="idle">Select a city to see the published quote, date and source.</p>
       </div>
       <div class="panel">
         <h2>Legend</h2>
@@ -172,30 +205,30 @@ HTML = """<!doctype html>
           <li><span class="sw"><svg width="40" height="38" viewBox="0 0 40 38"><circle cx="20" cy="19" r="17" fill="var(--blue-3)" stroke="var(--dot)" stroke-width="1.5"/></svg></span><span>1000–4999 participants</span></li>
           <li><span class="sw"><svg width="40" height="30" viewBox="0 0 40 30"><circle cx="20" cy="15" r="12" fill="var(--blue-2)" stroke="var(--dot)" stroke-width="1.5"/></svg></span><span>100–999 participants</span></li>
           <li><span class="sw"><svg width="40" height="20" viewBox="0 0 40 20"><circle cx="20" cy="10" r="6.5" fill="var(--blue-1)" stroke="var(--dot)" stroke-width="1.5"/></svg></span><span>fewer than 100</span></li>
-          <li><span class="sw"><svg width="40" height="20" viewBox="0 0 40 20"><circle cx="20" cy="10" r="6.5" fill="none" stroke="var(--dot)" stroke-width="1.5" stroke-dasharray="3 3"/></svg></span><span>protest held, no count published</span></li>
+          <li><span class="sw"><svg width="40" height="20" viewBox="0 0 40 20"><circle cx="20" cy="10" r="6.5" fill="none" stroke="var(--dot)" stroke-width="1.5" stroke-dasharray="3 3"/></svg></span><span>no city count published</span></li>
           <li><span class="sw"><svg width="40" height="20" viewBox="0 0 40 20"><circle cx="20" cy="10" r="6.5" fill="var(--online-fill)" stroke="var(--ink-3)" stroke-width="1.5" stroke-dasharray="1.5 3"/></svg></span><span>online action (Kherson)</span></li>
-          <li><span class="sw"><svg width="40" height="36" viewBox="0 0 40 36"><circle cx="20" cy="18" r="12" fill="var(--blue-2)" stroke="var(--dot)" stroke-width="1.5"/><circle cx="20" cy="18" r="16" fill="none" stroke="var(--contested)" stroke-width="1.3" stroke-dasharray="2.5 3"/></svg></span><span>contested: sources disagree</span></li>
+          <li><span class="sw"><svg width="40" height="36" viewBox="0 0 40 36"><circle cx="20" cy="18" r="12" fill="var(--blue-2)" stroke="var(--dot)" stroke-width="1.5"/><circle cx="20" cy="18" r="16" fill="none" stroke="var(--contested)" stroke-width="1.3" stroke-dasharray="2.5 3"/></svg></span><span>sources disagree</span></li>
         </ul>
       </div>
     </div>
   </div>
   <div class="tablewrap">
     <table>
-      <caption>Summary by city. Each figure is the city's peak over the full wave; quotes are verbatim as published.</caption>
-      <thead><tr><th>City</th><th>Category</th><th>Quote (verbatim)</th><th>Peak</th><th>Days</th><th>Status</th><th>Source</th></tr></thead>
+      <caption>Peak bands, published quotes and sources by city.</caption>
+      <thead><tr><th>City</th><th>Peak band</th><th>Published quote</th><th>Estimate time</th><th>Documented days</th><th>Status</th><th>Source</th></tr></thead>
       <tbody id="tb"></tbody>
     </table>
   </div>
   <footer>
     <p style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap">
-      <span>Protest sizes are approximate; collection was checked through __SNAP__. Some locations may be missing.</span>
-      <span style="font-weight:600;color:var(--ink);white-space:nowrap">Chart: Valentyn Hatsko, TG: @gorbach_squad.</span>
+      <span>Counts are approximate. We checked Ukrainian media through __SNAP__.</span>
+      <span style="font-weight:600;color:var(--ink);white-space:nowrap">Map and data: Valentyn Hatsko, TG: @gorbach_squad.</span>
     </p>
-    <p>Borders and oblasts: Natural Earth 10m. Selection rule: the figure that agrees across several
-       independent sources, is the latest in time and the largest city peak. «Contested» marks a
-       genuine disagreement (Kyiv: «сотні людей» in Suspilne against «близько двох тисяч» in Interfax).
-       Quotes are taken from page bodies, never from headlines or search snippets, and are left in the
-       original Ukrainian: translating a quote would make it evidence of nothing.</p>
+    <p>For each city, we use the highest estimate we could verify in article text. When reports differ,
+       we compare timestamps and independent sources. We add a dashed ring where the figures still
+       disagree. Quotes reproduce the Ukrainian wording in article bodies; we excluded headlines and
+       search snippets.</p>
+    <p>Borders and oblasts: Natural Earth 10m.</p>
     <p>Source: Ukrainian media, retrieved September 2026. <a href="https://github.com/KSE-Sociological-Center/fedorov-protests-2026">Repository and data</a>.</p>
   </footer>
 </div>
@@ -225,15 +258,17 @@ const CITIES = __DATA__, LAND = __LAND__, COUNTRY = __COUNTRY__;
    return {x:cx+r+G,a:"start",y1:cy+1,y2:cy+1+L};};
 
  const dots=document.getElementById("dots"), det=document.getElementById("detail");
+ const MON=["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+ const fmt=v=>{if(!v)return "";const p=v.split("-");return Number(p[2])+" "+MON[Number(p[1])-1];};
  function render(c){
-   const dur=c.days?(c.days+(c.days==="1"?" day":" days")+" documented, "
-     +(c.first||"?").slice(5)+"–"+(c.last||"?").slice(5)):"";
-   det.innerHTML='<p class="city">'+c.n+(c.contested?'<span class="chip">contested</span>':'')+'</p>'
+   const dur=c.days?(c.days+" documented "+(c.days==="1"?"day":"days")+" · "
+     +fmt(c.first)+"–"+fmt(c.last)):"";
+   det.innerHTML='<p class="city">'+c.n+(c.contested?'<span class="chip">sources differ</span>':'')+'</p>'
     +'<p class="ob">'+c.ob+' · '+c.cat+' · '+c.status+'</p>'
-    +(dur?'<p class="ob">'+dur+(c.peak?' · peak '+c.peak.slice(5):'')+'</p>':'')
+    +(dur?'<p class="ob">'+dur+(c.peak?' · peak '+fmt(c.peak):'')+'</p>':'')
     +'<blockquote>«'+c.q+'»</blockquote>'
     +(c.qen?'<p class="gloss">'+c.qen+'</p>':'')
-    +'<div class="meta"><span>as of '+c.t+'</span>'
+    +'<div class="meta"><span>Estimate: '+c.t+'</span>'
     +'<span><a href="'+c.url+'" target="_blank" rel="noopener noreferrer">'+c.src+'</a></span></div>'
     +(c.note?'<p class="note">'+c.note+'</p>':'');
  }
@@ -241,7 +276,7 @@ const CITIES = __DATA__, LAND = __LAND__, COUNTRY = __COUNTRY__;
    const r=R[c.cat], cx=px(c.lon), cy=py(c.lat);
    let cls="dot "+CCLASS[c.cat];
    const g=el("g",{class:cls,tabindex:"0",role:"button","aria-label":c.n+", "+c.cat+", "+c.q});
-   const ti=el("title",{}); ti.textContent=c.n+" — "+c.cat+": «"+c.q+"» ("+c.src+", "+c.t+")"; g.appendChild(ti);
+   const ti=el("title",{}); ti.textContent=c.n+": "+c.cat+", «"+c.q+"» ("+c.src+", "+c.t+")"; g.appendChild(ti);
    if(c.contested) g.appendChild(el("circle",{cx:cx,cy:cy,r:r+4,class:"ring"}));
    g.appendChild(el("circle",{cx:cx,cy:cy,r:r,class:"body"}));
    g.appendChild(el("circle",{cx:cx,cy:cy,r:Math.max(r+6,13),class:"hit"}));
@@ -257,7 +292,7 @@ const CITIES = __DATA__, LAND = __LAND__, COUNTRY = __COUNTRY__;
  const tb=document.getElementById("tb");
  CITIES.forEach(c=>{
    const tr=document.createElement("tr");
-   tr.innerHTML='<td class="c"><b>'+c.n+'</b>'+(c.contested?'<span class="chip">contested</span>':'')+'</td>'
+   tr.innerHTML='<td class="c"><b>'+c.n+'</b>'+(c.contested?'<span class="chip">sources differ</span>':'')+'</td>'
     +'<td class="c">'+c.cat+'</td><td class="q">«'+c.q+'»</td><td class="c">'+c.t+'</td>'
     +'<td class="c">'+(c.days||'')+'</td>'
     +'<td class="c">'+c.status+'</td>'
@@ -280,7 +315,7 @@ out = (HTML.replace("__DATA__", j(DATA))
            .replace("__STATUS__", STATUS_LINE)
            .replace("__AUTHOR__", AUTHOR)
            .replace("__TITLE__", TITLE)
-           .replace("__SUBTITLE__", META["subtitle_en"]))
+           .replace("__SUBTITLE__", SUBTITLE))
 
 # ---- schema.org/Dataset ---------------------------------------------------------
 # Google Dataset Search reads JSON-LD, not prose: without this block the dataset is
@@ -350,6 +385,11 @@ LD = {
 LDTAG = '<script type="application/ld+json">%s</script>\n' % json.dumps(
     LD, ensure_ascii=False, indent=1)
 out = LDTAG + out
+slop_markers = ("1 SEP UPDATE", "REVISED UPWARD", "NEW in the 6 Aug run",
+                "Settled to took place", "The only city where")
+leaked = [marker for marker in slop_markers if marker in out]
+if leaked:
+    raise SystemExit("internal audit prose leaked into map: " + ", ".join(leaked))
 io.open(ds("map.html"), "w", encoding="utf-8").write(out)
 print("cities: %d | active at close: %d | size: %d KB" % (len(cities), len(live), len(out.encode("utf-8")) // 1024))
 
