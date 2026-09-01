@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """data/<event>/cities.csv + geo.py -> data/<event>/map.html (black-and-white interactive page)"""
-import csv, io, json, os
+import csv, io, json, os, datetime
 from geo import COUNTRY, REGIONS
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -13,6 +13,7 @@ ds = lambda n: os.path.join(HERE, DS, n)
 META = json.load(io.open(ds("meta.json"), encoding="utf-8"))
 
 SNAPSHOT = META["snapshot"]
+SNAPSHOT_ISO = datetime.datetime.strptime(SNAPSHOT, "%d %B %Y").date().isoformat()
 AUTHOR = META["author_en"]
 
 cities = list(csv.DictReader(io.open(ds("cities.csv"), encoding="utf-8")))
@@ -24,14 +25,27 @@ ORDER = {"5000+": 0, "1000–4999": 1, "100–999": 2, "<100": 3, "unknown": 4, 
 cities.sort(key=lambda c: (ORDER.get(c["category"], 9), c["city"]))
 live = [c["city"] for c in cities if c["status"].startswith("ongoing")]
 
+def pretty_date(value):
+    d = datetime.date.fromisoformat(value)
+    return "%d %s" % (d.day, d.strftime("%B %Y"))
+
+last_day = max((c.get("last_day", "") for c in cities), default=META["last_action"])
+last_cities = [c["city"] for c in cities if c.get("last_day") == last_day]
+TITLE = "Documented protest locations and peak crowd bands"
+COORD_END = pretty_date(META["coordinated_end"])
+LAST_ACTION = pretty_date(last_day)
+STATUS_LINE = ("Collection checked through %s. Last documented coordinated multi-city actions: %s; "
+               "latest local action: %s, %s. Kherson protested online." %
+               (SNAPSHOT, COORD_END, ", ".join(last_cities), LAST_ACTION))
+
 LABEL_DIR = {
     "Kyiv": "up", "Kharkiv": "right", "Dnipro": "right", "Lviv": "left", "Odesa": "down",
     "Ivano-Frankivsk": "left", "Ternopil": "up", "Khmelnytskyi": "down", "Lutsk": "left",
     "Cherkasy": "down", "Poltava": "up", "Zaporizhzhia": "right", "Kropyvnytskyi": "down",
     "Uzhhorod": "right", "Rivne": "right", "Mykolaiv": "left", "Chernivtsi": "down",
     "Zhytomyr": "up", "Sumy": "right", "Kolomyia": "down", "Vinnytsia": "right",
-    "Chernihiv": "up", "Kryvyi Rih": "down", "Kremenchuk": "down", "Kherson": "down",
-    "Mukachevo": "down", "Kamianske": "up", "Uman": "down",
+    "Chernihiv": "up", "Kryvyi Rih": "down", "Kremenchuk": "left", "Kherson": "down",
+    "Mukachevo": "down", "Kamianske": "right", "Uman": "down",
     "Izmail": "left", "Kalush": "up", "Sheptytskyi": "left",
     "Oleksandriia": "left", "Kamianets-Podilskyi": "down",
 }
@@ -43,25 +57,32 @@ DATA = [dict(n=c["city"], ob=c["oblast"], lat=float(c["lat"]), lon=float(c["lon"
              last=c.get("last_day", ""), peak=c.get("peak_day", ""),
              note=c["note"], dir=LABEL_DIR.get(c["city"], "down")) for c in cities]
 
-HTML = """<title>__TITLE__ — map</title>
+HTML = """<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>__TITLE__ — map</title>
 <style>
   :root {
     --paper:#fff; --ink:#111; --ink-2:#555; --ink-3:#8a8a8a;
     --land:#fff; --oblast:#c4c4c4; --border:#222; --rule:#e2e2e2; --panel:#fafafa;
-    --dot:#111; --dot-fill:rgba(0,0,0,.22);
+    --dot:#0e3667; --blue-4:#0d366b; --blue-3:#2a78d6; --blue-2:#5698e7;
+    --blue-1:#86b6ef; --online-fill:#e0ebf6; --contested:#e25c2d;
     --f: "Segoe UI","Noto Sans",system-ui,-apple-system,sans-serif;
   }
   @media (prefers-color-scheme: dark) {
     :root { --paper:#0e0e0f; --ink:#ededed; --ink-2:#a6a6a6; --ink-3:#6f6f6f;
             --land:#181818; --oblast:#3a3a3a; --border:#c8c8c8; --rule:#2b2b2b; --panel:#151515;
-            --dot:#ededed; --dot-fill:rgba(255,255,255,.26); }
+            --dot:#b9d7ff; --blue-4:#4d8bd7; --blue-3:#5d9ce7; --blue-2:#79afea;
+            --blue-1:#9bc5f1; --online-fill:#25364a; --contested:#ff8a5b; }
   }
   :root[data-theme="dark"] { --paper:#0e0e0f; --ink:#ededed; --ink-2:#a6a6a6; --ink-3:#6f6f6f;
     --land:#181818; --oblast:#3a3a3a; --border:#c8c8c8; --rule:#2b2b2b; --panel:#151515;
-    --dot:#ededed; --dot-fill:rgba(255,255,255,.26); }
+    --dot:#b9d7ff; --blue-4:#4d8bd7; --blue-3:#5d9ce7; --blue-2:#79afea;
+    --blue-1:#9bc5f1; --online-fill:#25364a; --contested:#ff8a5b; }
   :root[data-theme="light"] { --paper:#fff; --ink:#111; --ink-2:#555; --ink-3:#8a8a8a;
     --land:#fff; --oblast:#c4c4c4; --border:#222; --rule:#e2e2e2; --panel:#fafafa;
-    --dot:#111; --dot-fill:rgba(0,0,0,.22); }
+    --dot:#0e3667; --blue-4:#0d366b; --blue-3:#2a78d6; --blue-2:#5698e7;
+    --blue-1:#86b6ef; --online-fill:#e0ebf6; --contested:#e25c2d; }
   * { box-sizing:border-box; }
   body { background:var(--paper); color:var(--ink); font-family:var(--f); line-height:1.5;
          margin:0; padding:28px 20px 44px; -webkit-font-smoothing:antialiased; }
@@ -74,15 +95,33 @@ HTML = """<title>__TITLE__ — map</title>
   @media (max-width:880px){ .field { grid-template-columns:1fr; } }
   .mapbox { border:1px solid var(--rule); overflow-x:auto; padding:6px; }
   svg { display:block; width:100%; height:auto; }
+  .maphint { display:none; margin:2px 6px 7px; color:var(--ink-3); font-size:11px; }
+  .peak-section { display:flex; flex-direction:column; gap:10px; }
+  .peak-section h2 { font-size:20px; font-weight:700; margin:0; letter-spacing:-.01em; }
+  .chartfigure { margin:0; }
+  .chartbox { border:1px solid var(--rule); overflow-x:auto; background:#fcfcfb; }
+  .peakchart { display:block; width:100%; height:auto; }
+  .charthint { display:none; margin:0 0 7px; color:var(--ink-3); font-size:11px; }
+  .chartfigure figcaption { color:var(--ink-3); font-size:12px; margin-top:7px; }
+  @media (max-width:600px){
+    #map { width:760px; max-width:none; }
+    .maphint { display:block; }
+    .peakchart { width:920px; max-width:none; }
+    .charthint { display:block; }
+  }
   .land { fill:var(--land); stroke:var(--oblast); stroke-width:.9; }
   .country { fill:none; stroke:var(--border); stroke-width:1.9; stroke-linejoin:round; }
   .dot { cursor:pointer; }
-  .dot circle.body { fill:var(--dot-fill); stroke:var(--dot); stroke-width:1.5; }
-  .dot:hover circle.body, .dot:focus-visible circle.body { fill:var(--dot); fill-opacity:.55; }
+  .dot circle.body { stroke:var(--dot); stroke-width:1.5; }
+  .dot.c5000 circle.body { fill:var(--blue-4); }
+  .dot.c1000 circle.body { fill:var(--blue-3); }
+  .dot.c100  circle.body { fill:var(--blue-2); }
+  .dot.csmall circle.body { fill:var(--blue-1); }
+  .dot:hover circle.body, .dot:focus-visible circle.body { filter:brightness(.78); }
   .dot:focus-visible { outline:none; }
   .dot.unknown circle.body { fill:none; stroke-dasharray:3 3; }
-  .dot.online  circle.body { fill:none; stroke:var(--ink-3); stroke-dasharray:1.5 3; }
-  .dot circle.ring { fill:none; stroke:var(--dot); stroke-width:1.3; stroke-dasharray:2.5 3; }
+  .dot.online  circle.body { fill:var(--online-fill); stroke:var(--ink-3); stroke-dasharray:1.5 3; }
+  .dot circle.ring { fill:none; stroke:var(--contested); stroke-width:1.3; stroke-dasharray:2.5 3; }
   .dot circle.hit { fill:transparent; }
   .dot text { font-size:12px; font-weight:600; fill:var(--ink); paint-order:stroke;
               stroke:var(--paper); stroke-width:3.5px; stroke-linejoin:round; pointer-events:none; }
@@ -120,13 +159,14 @@ HTML = """<title>__TITLE__ — map</title>
 <div class="wrap">
   <header style="display:flex;flex-direction:column;gap:8px">
     <h1>__TITLE__</h1>
-    <p class="sub">__SUBTITLE__. Protests in __N__ cities. Figures are each city's peak over the wave.</p>
-    <p class="live">Protests are ongoing, figures are preliminary. Snapshot at __SNAP__: in __LIVE__ cities the action was still running. Kherson protested online.</p>
+    <p class="sub">__SUBTITLE__. __N__ locations over a __DAYS__-day calendar span; figures are each city's peak.</p>
+    <p class="live">__STATUS__</p>
   </header>
   <div class="rule"></div>
   <div class="field">
     <div class="mapbox">
-      <svg id="map" viewBox="0 0 1000 690" role="img" aria-label="Map of Ukraine showing cities where protests took place during the wave">
+      <p class="maphint">Scroll horizontally to read direct labels; tap a city for its source.</p>
+      <svg id="map" viewBox="0 0 1000 690" role="img" aria-label="Map of __N__ documented protest locations and their peak crowd bands">
         <g id="land"></g><g id="dots"></g>
       </svg>
     </div>
@@ -137,34 +177,47 @@ HTML = """<title>__TITLE__ — map</title>
       <div class="panel">
         <h2>Legend</h2>
         <ul class="leg">
-          <li><span class="sw"><svg width="40" height="46" viewBox="0 0 40 46"><circle cx="20" cy="23" r="21" fill="var(--dot-fill)" stroke="var(--dot)" stroke-width="1.5"/></svg></span><span>5000+ participants</span></li>
-          <li><span class="sw"><svg width="40" height="38" viewBox="0 0 40 38"><circle cx="20" cy="19" r="17" fill="var(--dot-fill)" stroke="var(--dot)" stroke-width="1.5"/></svg></span><span>1000–4999 participants</span></li>
-          <li><span class="sw"><svg width="40" height="30" viewBox="0 0 40 30"><circle cx="20" cy="15" r="12" fill="var(--dot-fill)" stroke="var(--dot)" stroke-width="1.5"/></svg></span><span>100–999 participants</span></li>
-          <li><span class="sw"><svg width="40" height="20" viewBox="0 0 40 20"><circle cx="20" cy="10" r="6.5" fill="var(--dot-fill)" stroke="var(--dot)" stroke-width="1.5"/></svg></span><span>fewer than 100</span></li>
+          <li><span class="sw"><svg width="40" height="46" viewBox="0 0 40 46"><circle cx="20" cy="23" r="21" fill="var(--blue-4)" stroke="var(--dot)" stroke-width="1.5"/></svg></span><span>5000+ participants</span></li>
+          <li><span class="sw"><svg width="40" height="38" viewBox="0 0 40 38"><circle cx="20" cy="19" r="17" fill="var(--blue-3)" stroke="var(--dot)" stroke-width="1.5"/></svg></span><span>1000–4999 participants</span></li>
+          <li><span class="sw"><svg width="40" height="30" viewBox="0 0 40 30"><circle cx="20" cy="15" r="12" fill="var(--blue-2)" stroke="var(--dot)" stroke-width="1.5"/></svg></span><span>100–999 participants</span></li>
+          <li><span class="sw"><svg width="40" height="20" viewBox="0 0 40 20"><circle cx="20" cy="10" r="6.5" fill="var(--blue-1)" stroke="var(--dot)" stroke-width="1.5"/></svg></span><span>fewer than 100</span></li>
           <li><span class="sw"><svg width="40" height="20" viewBox="0 0 40 20"><circle cx="20" cy="10" r="6.5" fill="none" stroke="var(--dot)" stroke-width="1.5" stroke-dasharray="3 3"/></svg></span><span>protest held, no count published</span></li>
-          <li><span class="sw"><svg width="40" height="20" viewBox="0 0 40 20"><circle cx="20" cy="10" r="6.5" fill="none" stroke="var(--ink-3)" stroke-width="1.5" stroke-dasharray="1.5 3"/></svg></span><span>online action (Kherson)</span></li>
-          <li><span class="sw"><svg width="40" height="36" viewBox="0 0 40 36"><circle cx="20" cy="18" r="12" fill="var(--dot-fill)" stroke="var(--dot)" stroke-width="1.5"/><circle cx="20" cy="18" r="16" fill="none" stroke="var(--dot)" stroke-width="1.3" stroke-dasharray="2.5 3"/></svg></span><span>contested: sources disagree</span></li>
+          <li><span class="sw"><svg width="40" height="20" viewBox="0 0 40 20"><circle cx="20" cy="10" r="6.5" fill="var(--online-fill)" stroke="var(--ink-3)" stroke-width="1.5" stroke-dasharray="1.5 3"/></svg></span><span>online action (Kherson)</span></li>
+          <li><span class="sw"><svg width="40" height="36" viewBox="0 0 40 36"><circle cx="20" cy="18" r="12" fill="var(--blue-2)" stroke="var(--dot)" stroke-width="1.5"/><circle cx="20" cy="18" r="16" fill="none" stroke="var(--contested)" stroke-width="1.3" stroke-dasharray="2.5 3"/></svg></span><span>contested: sources disagree</span></li>
         </ul>
       </div>
     </div>
   </div>
+  <section class="peak-section" aria-labelledby="peak-chart-title">
+    <h2 id="peak-chart-title">Daily peak crowd estimates in Kyiv</h2>
+    <figure class="chartfigure">
+      <p class="charthint">Scroll horizontally to read dates and event labels.</p>
+      <div class="chartbox">
+        <img class="peakchart" src="chart_peak_by_day.png"
+             alt="Column chart of daily peak crowd estimates at Kyiv protests from 16 July to 19 August 2026; the highest estimate is 6,000 on 31 July."
+             loading="lazy" decoding="async">
+      </div>
+      <figcaption>Blank days mean no usable Kyiv crowd estimate, not zero participants.</figcaption>
+    </figure>
+  </section>
   <div class="tablewrap">
     <table>
-      <caption>Summary by city. Each figure is the daily peak: agreed across several independent sources, latest, largest. Quotes are verbatim as published.</caption>
+      <caption>Summary by city. Each figure is the city's peak over the full wave; quotes are verbatim as published.</caption>
       <thead><tr><th>City</th><th>Category</th><th>Quote (verbatim)</th><th>Peak</th><th>Days</th><th>Status</th><th>Source</th></tr></thead>
       <tbody id="tb"></tbody>
     </table>
   </div>
   <footer>
     <p style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap">
-      <span>Protest sizes are approximate. The project is ongoing; some locations may be missing.</span>
-      <span style="font-weight:600;color:var(--ink);white-space:nowrap">__AUTHOR__</span>
+      <span>Protest sizes are approximate; collection was checked through __SNAP__. Some locations may be missing.</span>
+      <span style="font-weight:600;color:var(--ink);white-space:nowrap">Chart: Valentyn Hatsko, TG: @gorbach_squad.</span>
     </p>
     <p>Borders and oblasts: Natural Earth 10m. Selection rule: the figure that agrees across several
-       independent sources, is the latest in time and the largest, i.e. the daily peak. «Contested» marks a
+       independent sources, is the latest in time and the largest city peak. «Contested» marks a
        genuine disagreement (Kyiv: «сотні людей» in Suspilne against «близько двох тисяч» in Interfax).
        Quotes are taken from page bodies, never from headlines or search snippets, and are left in the
        original Ukrainian: translating a quote would make it evidence of nothing.</p>
+    <p>Source: Ukrainian media, retrieved September 2026. <a href="https://github.com/KSE-Sociological-Center/fedorov-protests-2026">Repository and data</a>.</p>
   </footer>
 </div>
 <script>
@@ -184,6 +237,8 @@ const CITIES = __DATA__, LAND = __LAND__, COUNTRY = __COUNTRY__;
  COUNTRY.forEach(r=>land.appendChild(el("path",{d:d(r),class:"country"})));
 
  const R={"5000+":24,"1000–4999":17,"100–999":12.5,"<100":6.5,"unknown":6.5,"online":6.5};
+ const CCLASS={"5000+":"c5000","1000–4999":"c1000","100–999":"c100","<100":"csmall",
+               "unknown":"unknown is-dim","online":"online is-dim"};
  const place=(cx,cy,r,dir)=>{const G=6,L=11;
    if(dir==="up")   return {x:cx,a:"middle",y1:cy-r-G-L,y2:cy-r-G};
    if(dir==="down") return {x:cx,a:"middle",y1:cy+r+G+L,y2:cy+r+G+L*2};
@@ -205,7 +260,7 @@ const CITIES = __DATA__, LAND = __LAND__, COUNTRY = __COUNTRY__;
  }
  CITIES.slice().sort((a,b)=>R[b.cat]-R[a.cat]).forEach(c=>{
    const r=R[c.cat], cx=px(c.lon), cy=py(c.lat);
-   let cls="dot"+(c.cat==="unknown"?" unknown is-dim":"")+(c.cat==="online"?" online is-dim":"");
+   let cls="dot "+CCLASS[c.cat];
    const g=el("g",{class:cls,tabindex:"0",role:"button","aria-label":c.n+", "+c.cat+", "+c.q});
    const ti=el("title",{}); ti.textContent=c.n+" — "+c.cat+": «"+c.q+"» ("+c.src+", "+c.t+")"; g.appendChild(ti);
    if(c.contested) g.appendChild(el("circle",{cx:cx,cy:cy,r:r+4,class:"ring"}));
@@ -240,10 +295,12 @@ out = (HTML.replace("__DATA__", j(DATA))
            .replace("__LAND__", j([r for _, rings in REGIONS for r in rings]))
            .replace("__COUNTRY__", j(COUNTRY))
            .replace("__N__", str(len(cities)))
+           .replace("__DAYS__", str(NDAYS))
            .replace("__LIVE__", str(len(live)))
            .replace("__SNAP__", SNAPSHOT)
+           .replace("__STATUS__", STATUS_LINE)
            .replace("__AUTHOR__", AUTHOR)
-           .replace("__TITLE__", META["title_en"])
+           .replace("__TITLE__", TITLE)
            .replace("__SUBTITLE__", META["subtitle_en"]))
 
 # ---- schema.org/Dataset ---------------------------------------------------------
@@ -286,6 +343,7 @@ LD = {
     "spatialCoverage": {"@type": "Place", "name": "Ukraine",
                         "geo": {"@type": "GeoShape", "box": "44.3 21.7 52.45 40.35"}},
     "datePublished": META["date"],
+    "dateModified": SNAPSHOT_ISO,
     "creator": {
         "@type": "Person", "name": META["author_en"].split(",")[0].strip(),
         "affiliation": {"@type": "Organization",
@@ -314,7 +372,7 @@ LDTAG = '<script type="application/ld+json">%s</script>\n' % json.dumps(
     LD, ensure_ascii=False, indent=1)
 out = LDTAG + out
 io.open(ds("map.html"), "w", encoding="utf-8").write(out)
-print("cities: %d | still ongoing: %d | size: %d KB" % (len(cities), len(live), len(out.encode("utf-8")) // 1024))
+print("cities: %d | active at close: %d | size: %d KB" % (len(cities), len(live), len(out.encode("utf-8")) // 1024))
 
 # ---- optional: the same page as the repo's GitHub Pages site --------------------
 if "--site" in sys.argv:
@@ -323,9 +381,9 @@ if "--site" in sys.argv:
                        % (SITE, LD["description"][:300].replace('"', "&quot;"), SITE), 1)
     os.makedirs(os.path.join(HERE, "docs"), exist_ok=True)
     io.open(os.path.join(HERE, "docs", "index.html"), "w", encoding="utf-8").write(site)
-    for f in ("map.png", "chart_by_day.png"):
+    for f in ("map.png", "chart_by_day.png", "chart_peak_by_day.png"):
         src, dst = ds(f), os.path.join(HERE, "docs", f)
         if os.path.exists(src):
             io.open(dst, "wb").write(io.open(src, "rb").read())
     io.open(os.path.join(HERE, "docs", ".nojekyll"), "w", encoding="utf-8").write("")
-    print("site: docs/index.html (+ map.png, chart_by_day.png)")
+    print("site: docs/index.html (+ map.png, chart_by_day.png, chart_peak_by_day.png)")

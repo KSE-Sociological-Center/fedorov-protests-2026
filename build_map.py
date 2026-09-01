@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 """data/<event>/cities.csv -> data/<event>/map.png
 
-Black-and-white protest map. Data comes from the CSV, which is the single
-source of truth; this file holds presentation only. Borders: Natural Earth
-10m admin_1 (geo.py).
+Protest map with an ordered blue scale for reported crowd bands. Data comes
+from the CSV, which is the single source of truth; this file holds
+presentation only. Borders: Natural Earth 10m admin_1 (geo.py).
 """
 import csv, io, math, os
+from datetime import datetime
 from PIL import Image, ImageDraw, ImageFont
 from geo import COUNTRY, REGIONS
 
@@ -23,7 +24,7 @@ OUT = ds("map.png")
 SNAPSHOT = META["snapshot"]
 AUTHOR = META["author_en"]
 S = 3
-W, H = 1500, 1158
+W, H = 1500, 1204
 FDIR = r"C:\Windows\Fonts"
 
 # Label direction is PRESENTATION, so it lives here rather than in the data.
@@ -64,7 +65,16 @@ OBLAST = (196, 196, 196)
 BORDER = (34, 34, 34)
 GREY   = (105, 105, 105)
 GREY_L = (150, 150, 150)
-DOT_A  = 58
+BLUE_EDGE = (14, 54, 103)
+CONTESTED = (226, 92, 45)
+ONLINE_FILL = (224, 235, 246)
+PALETTE = {
+    "5000+": (13, 54, 107),
+    "1000–4999": (42, 120, 214),
+    "100–999": (86, 152, 231),
+    "<100": (134, 182, 239),
+}
+DOT_A  = 218
 
 # ---- data --------------------------------------------------------------------
 with io.open(CSV_PATH, encoding="utf-8") as f:
@@ -72,6 +82,15 @@ with io.open(CSV_PATH, encoding="utf-8") as f:
 for c in CITIES:
     c["lat"], c["lon"] = float(c["lat"]), float(c["lon"])
     c["dir"] = LABEL_DIR.get(c["city"], "down")
+with io.open(ds("by_day.csv"), encoding="utf-8") as f:
+    _day_fields = csv.DictReader(f).fieldnames or []
+DAYCOLS = [c for c in _day_fields if c and c != "city"]
+NDAYS = len(DAYCOLS)
+LAST_ACTION = max(c["last_day"] for c in CITIES if c.get("last_day"))
+LAST_ACTION_EN = datetime.strptime(LAST_ACTION, "%Y-%m-%d").strftime("%-d %B") if os.name != "nt" else datetime.strptime(LAST_ACTION, "%Y-%m-%d").strftime("%#d %B")
+COORDINATED_END = datetime.strptime(META["coordinated_end"], "%Y-%m-%d")
+COORDINATED_END_EN = COORDINATED_END.strftime("%-d %B") if os.name != "nt" else COORDINATED_END.strftime("%#d %B")
+LAST_CITIES = ", ".join(c["city"] for c in CITIES if c.get("last_day") == LAST_ACTION)
 
 # ---- projection ----------------------------------------------------------------
 KX = math.cos(math.radians(48.4))
@@ -140,7 +159,8 @@ od = ImageDraw.Draw(ov)
 for c in sorted(CITIES, key=lambda c: -R[c["category"]]):
     if c["category"] in ("unknown", "online"): continue
     cx, cy, r = px(c["lon"]), py(c["lat"]), R[c["category"]] * S
-    od.ellipse([cx - r, cy - r, cx + r, cy + r], fill=(0, 0, 0, DOT_A))
+    od.ellipse([cx - r, cy - r, cx + r, cy + r],
+               fill=PALETTE[c["category"]] + (DOT_A,))
 img = Image.alpha_composite(img.convert("RGBA"), ov).convert("RGB")
 d = ImageDraw.Draw(img)
 
@@ -150,11 +170,14 @@ for c in sorted(CITIES, key=lambda c: -R[c["category"]]):
     if cat == "unknown":
         dashed_circle(d, cx, cy, r, BLACK, max(2, int(1.4 * S)), on=4, off=4)
     elif cat == "online":
+        d.ellipse([cx - r, cy - r, cx + r, cy + r], fill=ONLINE_FILL)
         dashed_circle(d, cx, cy, r, GREY, max(2, int(1.4 * S)), on=2, off=4)
     else:
-        d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=BLACK, width=max(2, int(1.4 * S)))
+        d.ellipse([cx - r, cy - r, cx + r, cy + r], outline=BLUE_EDGE,
+                  width=max(2, int(1.4 * S)))
     if cont:
-        dashed_circle(d, cx, cy, r + int(4.5 * S), BLACK, max(2, int(1.2 * S)), on=3, off=4)
+        dashed_circle(d, cx, cy, r + int(4.5 * S), CONTESTED,
+                      max(2, int(1.2 * S)), on=3, off=4)
     rr = r + int(4.5 * S) if cont else r
     x, anc, y1, y2 = place(cx, cy, rr, c["dir"])
     dim = cat in ("unknown", "online")
@@ -169,12 +192,13 @@ def T(x, y, s, f, fill, anchor="ls"):
     d.text((x * S, y * S), s, font=f, fill=fill, anchor=anchor)
 
 n_live = sum(1 for c in CITIES if c["status"].startswith("ongoing"))
-SUBLINE = ("%s. Protests in %d cities; figures are each city's peak over the 22-day wave."
-           % (META["subtitle_en"], len(CITIES)))
-LIVELINE = ("As of %s the wave is in its 22nd consecutive day. The peak was the all-Ukrainian "
-            "march of 31 July — Kyiv «близько 6 тисяч» (police). The ministry is still unfilled."
-            % SNAPSHOT)
-T(28, 62, META["title_en"], F_TITLE, BLACK)
+TITLE = "Documented protest locations and peak crowd bands"
+SUBLINE = "%s. %d locations over a %d-day calendar span." % (
+    META["subtitle_en"], len(CITIES), NDAYS)
+LIVELINE = ("Collection checked through %s. Last documented coordinated multi-city actions: %s; "
+            "latest confirmed local action: %s, %s."
+            % (SNAPSHOT, COORDINATED_END_EN, LAST_CITIES, LAST_ACTION_EN))
+T(28, 62, TITLE, F_TITLE, BLACK)
 T(28, 92, SUBLINE, F_SUB, GREY)
 T(28, 117, LIVELINE, F_META, BLACK)
 d.line([28 * S, 136 * S, (W - 28) * S, 136 * S], fill=BLACK, width=max(1, S))
@@ -185,67 +209,71 @@ T(LX, LY, "LEGEND", F_LEGH, BLACK)
 # Vertical offsets are DERIVED from the radii, not written down: adding a band used to
 # mean hand-shifting every row below it, and forgetting to made them overlap.
 SPEC = [
-    (R["5000+"],     "solid", False, "5000+ participants"),
-    (R["1000–4999"], "solid", False, "1000–4999 participants"),
-    (R["100–999"],   "solid", False, "100–999 participants"),
-    (R["<100"],      "solid", False, "fewer than 100"),
-    (6.5,            "dash",  False, "protest held, no count published"),
-    (6.5,            "dot",   False, "online action (Kherson)"),
-    (R["100–999"],   "solid", True,  "contested: sources disagree"),
+    (R["5000+"],     "solid", False, "5000+ participants", "5000+"),
+    (R["1000–4999"], "solid", False, "1000–4999 participants", "1000–4999"),
+    (R["100–999"],   "solid", False, "100–999 participants", "100–999"),
+    (R["<100"],      "solid", False, "fewer than 100", "<100"),
+    (6.5,             "dash",  False, "protest held, no count published", None),
+    (6.5,             "dot",   False, "online action (Kherson)", "online"),
+    (R["100–999"],   "solid", True,  "contested: sources disagree", "100–999"),
 ]
 GAP = 14
 rows, y = [], 0.0
-for i, (r_, kind, ring, lab) in enumerate(SPEC):
+for i, (r_, kind, ring, lab, cat) in enumerate(SPEC):
     eff = r_ + (4.5 if ring else 0)          # the contested ring sits outside the dot
     y = eff + 16 if i == 0 else y + prev_eff + eff + GAP
-    rows.append((y, r_, kind, ring, lab))
+    rows.append((y, r_, kind, ring, lab, cat))
     prev_eff = eff
 
-for dy, r_, kind, ring, lab in rows:
+for dy, r_, kind, ring, lab, cat in rows:
     cx, cy = (LX + 22) * S, (LY + dy) * S
     rr = r_ * S
     if kind == "solid":
         o2 = Image.new("RGBA", img.size, (0, 0, 0, 0))
-        ImageDraw.Draw(o2).ellipse([cx - rr, cy - rr, cx + rr, cy + rr], fill=(0, 0, 0, DOT_A))
+        ImageDraw.Draw(o2).ellipse([cx - rr, cy - rr, cx + rr, cy + rr],
+                                   fill=PALETTE[cat] + (DOT_A,))
         img.paste(Image.alpha_composite(img.convert("RGBA"), o2).convert("RGB"), (0, 0))
         d = ImageDraw.Draw(img)
-        d.ellipse([cx - rr, cy - rr, cx + rr, cy + rr], outline=BLACK, width=max(2, int(1.4 * S)))
+        d.ellipse([cx - rr, cy - rr, cx + rr, cy + rr], outline=BLUE_EDGE,
+                  width=max(2, int(1.4 * S)))
     elif kind == "dash":
         dashed_circle(d, cx, cy, rr, BLACK, max(2, int(1.4 * S)), on=4, off=4)
     else:
+        d.ellipse([cx - rr, cy - rr, cx + rr, cy + rr], fill=ONLINE_FILL)
         dashed_circle(d, cx, cy, rr, GREY, max(2, int(1.4 * S)), on=2, off=4)
     if ring:
-        dashed_circle(d, cx, cy, rr + int(4.5 * S), BLACK, max(2, int(1.2 * S)), on=3, off=4)
+        dashed_circle(d, cx, cy, rr + int(4.5 * S), CONTESTED,
+                      max(2, int(1.2 * S)), on=3, off=4)
     d.text(((LX + 56) * S, (LY + dy + 5) * S), lab, font=F_LEG, fill=BLACK, anchor="ls")
 
 # ---- footer -------------------------------------------------------------------
 # One line. The rule is already in the subtitle and «contested» in the legend; the
 # full method lives in the report. Only the required note and border credit remain.
-d.line([28 * S, (H - 40) * S, (W - 28) * S, (H - 40) * S], fill=(221, 221, 221), width=max(1, S))
-T(28, H - 20, "Protest sizes are approximate. The project is ongoing; some locations may be missing. "
-              "Borders and oblasts: Natural Earth 10m.", F_FOOT, GREY)
-d.text(((W - 28) * S, (H - 20) * S), AUTHOR, font=F_AUTH, fill=BLACK, anchor="rs")
+d.line([28 * S, (H - 66) * S, (W - 28) * S, (H - 66) * S], fill=(221, 221, 221), width=max(1, S))
+METHOD = "City dots show peak crowd bands; missing locations remain possible. Borders: Natural Earth 10m."
+CREDIT = "Chart: Valentyn Hatsko, TG: @gorbach_squad. Source: Ukrainian media, retrieved September 2026."
+REPO = "Data, code and method: github.com/KSE-Sociological-Center/fedorov-protests-2026"
+T(28, H - 46, METHOD, F_FOOT, GREY)
+T(28, H - 27, CREDIT, F_AUTH, BLACK)
+T(28, H - 9, REPO, F_FOOT, GREY)
 
 # ---- self-check: does the masthead/footer text fit the canvas ------------------
 over = []
 for label, txt, fnt in [("subtitle", SUBLINE, F_SUB), ("live line", LIVELINE, F_META)]:
     w = fnt.getbbox(txt)[2] / S
     if 28 + w > W - 28: over.append("%s (+%dpx)" % (label, int(28 + w - (W - 28))))
-foot = ("Protest sizes are approximate. The project is ongoing; some locations may be missing. "
-        "Borders and oblasts: Natural Earth 10m.")
-foot_end = 28 + F_FOOT.getbbox(foot)[2] / S
-auth_start = (W - 28) - F_AUTH.getbbox(AUTHOR)[2] / S
-if foot_end + 16 > auth_start:
-    over.append("footer collides with byline (+%dpx)" % int(foot_end + 16 - auth_start))
+for label, txt, fnt in [("method", METHOD, F_FOOT), ("credit", CREDIT, F_AUTH), ("repository", REPO, F_FOOT)]:
+    if 28 + fnt.getbbox(txt)[2] / S > W - 28:
+        over.append("%s footer line overflows" % label)
 # and does the land run into the footer
 land_bottom = (oy + (LAT0 - LAT1) * sc)
-if land_bottom > H - 40 - 6: over.append("land overlaps footer (+%dpx)" % int(land_bottom - (H - 46)))
+if land_bottom > H - 66 - 6: over.append("land overlaps footer (+%dpx)" % int(land_bottom - (H - 72)))
 # legend rows must not overlap each other or run past the footer rule
-for (y1, r1, _, g1, l1), (y2, r2, _, g2, l2) in zip(rows, rows[1:]):
+for (y1, r1, _, g1, l1, _), (y2, r2, _, g2, l2, _) in zip(rows, rows[1:]):
     if (LY + y1) + r1 + (4.5 if g1 else 0) >= (LY + y2) - r2 - (4.5 if g2 else 0):
         over.append("legend rows overlap: %s / %s" % (l1, l2))
-last_y, last_r, _, last_ring, _ = rows[-1]
-if LY + last_y + last_r + (4.5 if last_ring else 0) > H - 40:
+last_y, last_r, _, last_ring, _, _ = rows[-1]
+if LY + last_y + last_r + (4.5 if last_ring else 0) > H - 66:
     over.append("legend runs past the footer rule")
 print("text overflowing canvas:", over or "none")
 
@@ -258,7 +286,7 @@ for i in range(len(boxes)):
         oyy = min(y1 + h1, y2 + h2) - max(y1, y2)
         if oxx > 2 * S and oyy > 2 * S:
             hits.append("%s x %s" % (t1, t2))
-print("cities:", len(CITIES), "| still ongoing:", n_live)
+print("cities:", len(CITIES), "| active at close:", n_live)
 print("label collisions:", hits or "none")
 img.resize((W, H), Image.LANCZOS).save(OUT, "PNG", optimize=True)
 print("saved:", OUT, os.path.getsize(OUT) // 1024, "KB")

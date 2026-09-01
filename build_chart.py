@@ -7,11 +7,9 @@ midpoints of the reported crowd sizes. Kyiv is drawn as a separate base band bec
 dominates every day and is the cleanest day-by-day signal; the rest is the summed reported
 figures of the other cities.
 
-The days come from the CSV header (columns named MM-DD), not from a list in this file, so
-the chart keeps working as the wave runs on. At four days a bar chart read well; at
-twenty-two the series is a trajectory, so it is drawn as a stacked area with a marker per
-day. Days where no city published a figure are gaps, not zeroes, and are drawn as such —
-the wave did not stop on those days, the counting did.
+The days come from the CSV header (columns named MM-DD), not from a list in this file.
+Days where no city published a figure are gaps, not zeroes, and are drawn as such — the
+wave did not necessarily stop on those days; the counting did.
 """
 import csv, io, os, json, sys
 from PIL import Image, ImageDraw, ImageFont
@@ -23,7 +21,7 @@ META = json.load(io.open(ds("meta.json"), encoding="utf-8"))
 AUTHOR = META["author_en"]
 FDIR = r"C:\Windows\Fonts"
 S = 3
-W, H = 1500, 900
+W, H = 1500, 1100
 
 def font(names, size):
     for n in names:
@@ -48,6 +46,7 @@ WHITE = (255, 255, 255); BLACK = (17, 17, 17)
 GREY = (105, 105, 105); GREY_L = (150, 150, 150)
 KYIV = (72, 72, 72); REST = (204, 204, 204)          # two greys
 GRID = (232, 232, 232)
+EVENT = (126, 126, 126)
 MON_UK = {"07": "July", "08": "August", "09": "September"}
 
 def num(v):
@@ -75,10 +74,15 @@ def T(x, y, s, f, fill, anchor="ls"):
     d.text((x * S, y * S), s, font=f, fill=fill, anchor=anchor)
 def line(pts, fill, w=1):
     d.line([(x * S, y * S) for x, y in pts], fill=fill, width=max(1, int(w * S)))
+def dashed_vline(x, y0, y1, fill=EVENT, w=1, on=5, off=5):
+    y = y0
+    while y < y1:
+        line([(x, y), (x, min(y + on, y1))], fill, w)
+        y += on + off
 
 # ---- masthead ----------------------------------------------------------------
-T(28, 58, "Approximate turnout by day — protests over Fedorov's departure", F_TITLE, BLACK)
-T(28, 86, "%s. Summed reported crowd figures; Kyiv shown separately, as it dominates every day."
+T(28, 58, "Approximate reported protest turnout by day", F_TITLE, BLACK)
+T(28, 86, "%s. Only city figures stated in page bodies; Kyiv is shown separately."
           % META["subtitle_en"], F_SUB, GREY)
 line([(28, 102), (W - 28, 102)], BLACK, 1)
 
@@ -128,9 +132,11 @@ for run in runs:
 # and again on the day of the all-Ukrainian march. Both are labelled, because the
 # difference between them is coverage, not turnout.
 crests = sorted(counted, key=lambda k: -tot[k])[:2]
+important_ticks = {"07-31", "08-16", "08-18", "08-19", DAYCOLS[-1]}
 for i, k in enumerate(DAYCOLS):
     x = sx(i)
-    T(x, PY1 + 22, k[3:], F_DAY, BLACK if tot[k] else GREY_L, anchor="ms")
+    if i % 2 == 0 or k in important_ticks:
+        T(x, PY1 + 22, k[3:], F_DAY, BLACK if tot[k] else GREY_L, anchor="ms")
     if tot[k] == 0:
         T(x, PY1 + 40, "·", F_SEG, GREY_L, anchor="ms")
         continue
@@ -157,27 +163,46 @@ for a, b in seg:
 T(PX0 - 12, PY1 + 40, "cities", F_SEG, GREY_L, anchor="rs")
 
 # ---- annotations -------------------------------------------------------------
-# MARCH is the day the all-Ukrainian march was held: the largest single action of the wave
-# by every qualitative account, and the only Kyiv figure the police ever put a number to.
+# Labels identify selected protest events without turning the title into a conclusion.
 MARCH = "07-31"
-NOTES = []
 if MARCH in DAYCOLS and tot[MARCH]:
-    NOTES.append((MARCH, "31 July: the all-Ukrainian march. Kyiv's ~6 000 is the only "
-                         "police estimate of the wave"))
-early = crests[0] if crests[0] != MARCH else (crests[1] if len(crests) > 1 else None)
-if early:
-    NOTES.append((early, "The early crest is wider coverage, not a bigger protest: "
-                         "%d cities published a figure, against %d on 31 July"
-                         % (ncity[early], ncity[MARCH])))
-placed = []
-for k, txt in NOTES:
-    px, py = sx(DAYCOLS.index(k)), sy(tot[k])
-    tw = F_NOTE.getbbox(txt)[2] / S
-    nx = min(max(PX0, px + 14), PX1 - tw)
-    ny = py - 44 - 26 * len(placed)
-    T(nx, ny, txt, F_NOTE, BLACK)
-    line([(nx, ny + 6), (nx + tw, ny + 6)], GRID, 1)
-    placed.append((nx, nx + tw, ny))
+    px, py = sx(DAYCOLS.index(MARCH)), sy(tot[MARCH])
+    note = "31 July · Kyiv march: ~6 000 (police)"
+    nx = min(px + 18, PX1 - F_NOTE.getbbox(note)[2] / S)
+    ny = max(PY0 + 8, py - 42)
+    T(nx, ny, note, F_NOTE, BLACK)
+    line([(px, py - 5), (nx, ny + 5)], GREY_L, 1)
+
+event_notes = [
+    ("08-16", 808, "16 Aug · repeat march", "rs"),
+    ("08-18", 830, "18–19 Aug · final coordinated actions", "ls"),
+    (DAYCOLS[-1], 852, "29 Aug · late Dnipro action (~15)", "rs"),
+]
+T(28, 808, "PROTEST EVENTS", F_SEG, GREY_L)
+for k, yy, txt, anchor in event_notes:
+    if k not in DAYCOLS:
+        continue
+    xx = sx(DAYCOLS.index(k))
+    tx = xx - 7 if anchor == "rs" else xx + 7
+    line([(xx, PY1 + 78), (xx, yy - 7)], GREY_L, 1)
+    T(tx, yy, txt, F_NOTE, BLACK, anchor=anchor)
+
+# Political context is a separate visual layer: thin dashed rules cross the plot,
+# while staggered labels below it keep adjacent 18–19 August events readable.
+political_events = [
+    ("07-22", 906, "22 Jul · Syrskyi removed; Drapatyi appointed", "ls"),
+    ("08-18", 930, "18 Aug · Fedorov calls for an election mechanism", "rs"),
+    ("08-19", 954, "19 Aug · Khmara appointed (312 votes)", "ls"),
+]
+T(28, 884, "POLITICAL CONTEXT", F_SEG, GREY_L)
+for k, yy, txt, anchor in political_events:
+    if k not in DAYCOLS:
+        continue
+    xx = sx(DAYCOLS.index(k))
+    tx = xx - 7 if anchor == "rs" else xx + 7
+    dashed_vline(xx, PY0, PY1, EVENT, 1, on=4, off=5)
+    dashed_vline(xx, PY1 + 78, yy - 7, EVENT, 1, on=4, off=5)
+    T(tx, yy, txt, F_NOTE, BLACK, anchor=anchor)
 
 # ---- legend ------------------------------------------------------------------
 lx, ly = PX0 + 16, 150
@@ -188,20 +213,20 @@ for j, (fill, lab) in enumerate([(KYIV, "Kyiv"), (REST, "other cities (sum)")]):
     T(lx + 24, yy + 11, lab, F_LEG, BLACK, anchor="ls")
 
 # ---- footer ------------------------------------------------------------------
-line([(28, H - 44), (W - 28, H - 44)], (221, 221, 221), 1)
-CAV = ("Approximate midpoints of reported figures; the number under each day is how many cities "
-       "published one. Gaps are days no city was counted, not days without protest.")
-T(28, H - 24, CAV, F_FOOT, GREY)
-d.text(((W - 28) * S, (H - 24) * S), AUTHOR, font=F_AUTH, fill=BLACK, anchor="rs")
+line([(28, H - 86), (W - 28, H - 86)], (221, 221, 221), 1)
+CAV = ("Approximate body-level figures; the number under a day is the number of cities counted. "
+       "Blank days mean no usable city estimate, not necessarily no protest.")
+CREDIT = "Chart: Valentyn Hatsko, TG: @gorbach_squad. Source: Ukrainian media, retrieved September 2026."
+REPO = "github.com/KSE-Sociological-Center/fedorov-protests-2026"
+T(28, H - 60, CAV, F_FOOT, GREY)
+T(28, H - 38, CREDIT, F_AUTH, BLACK)
+T(28, H - 17, REPO, F_FOOT, GREY)
 
 # ---- self-check: totals + text width -----------------------------------------
 over = []
-auth_w = F_AUTH.getbbox(AUTHOR)[2] / S
-if 28 + F_FOOT.getbbox(CAV)[2] / S + 24 > (W - 28) - auth_w:
-    over.append("caveat collides with byline")
-if placed and max(b for _, b, _ in placed) > PX1 + 1:
-    over.append("annotation overflows the plot")
-if (PX1 - PX0) / max(1, n - 1) < F_DAY.getbbox("00")[2] / S + 2:
+if 28 + F_FOOT.getbbox(CAV)[2] / S > W - 28:
+    over.append("caveat overflows")
+if 2 * (PX1 - PX0) / max(1, n - 1) < F_DAY.getbbox("00")[2] / S + 2:
     over.append("day labels collide")
 print("days: %d (%s..%s) | counted: %d" % (n, DAYCOLS[0], DAYCOLS[-1], len(counted)))
 for k in crests:
