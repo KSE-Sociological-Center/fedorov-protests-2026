@@ -195,9 +195,9 @@ n_live = sum(1 for c in CITIES if c["status"].startswith("ongoing"))
 TITLE = "Documented protest locations and peak crowd bands"
 SUBLINE = "%s. %d locations over a %d-day calendar span." % (
     META["subtitle_en"], len(CITIES), NDAYS)
-LIVELINE = ("Collection checked through %s. Last documented coordinated multi-city actions: %s; "
+LIVELINE = ("Coverage through %s; audited %s. Coordinated actions: %s; "
             "latest confirmed local action: %s, %s."
-            % (SNAPSHOT, COORDINATED_END_EN, LAST_CITIES, LAST_ACTION_EN))
+            % (SNAPSHOT, META.get("audit_date", SNAPSHOT), COORDINATED_END_EN, LAST_CITIES, LAST_ACTION_EN))
 T(28, 62, TITLE, F_TITLE, BLACK)
 T(28, 92, SUBLINE, F_SUB, GREY)
 T(28, 117, LIVELINE, F_META, BLACK)

@@ -53,6 +53,8 @@ if bad:
 
 def event_date(row):
     # Prefer an explicit event-date note over the publication timestamp.
+    if "подія не датована" in row["published"]:
+        return None
     m = re.search(r"подія\s+(\d{1,2})\.(\d{1,2})", row["published"], re.I)
     if not m:
         m = re.match(r"\s*(\d{1,2})\.(\d{1,2})", row["published"])
@@ -61,25 +63,27 @@ def event_date(row):
 CONTROL_START = datetime.date(2026, 7, 15)
 CONTROL_END = datetime.datetime.strptime(meta["snapshot"], "%d %B %Y").date()
 bad_dates = [(r["city"], r["published"]) for r in pubs
-             if event_date(r) is None or not (CONTROL_START <= event_date(r) <= CONTROL_END)]
+             if (event_date(r) is None and "подія не датована" not in r["published"])
+             or (event_date(r) and not (CONTROL_START <= event_date(r) <= CONTROL_END))]
+for r in pubs:
+    m = re.match(r"\s*(\d{1,2})\.(\d{1,2})", r["published"])
+    if not m or not (CONTROL_START <= datetime.date(2026, int(m.group(2)), int(m.group(1))) <= CONTROL_END):
+        bad_dates.append((r["city"], r["published"]))
 if bad_dates:
     errors.append("publication/event dates outside 15 Jul–1 Sep 2026: %s" % bad_dates[:8])
 
-def norm_url(value):
-    p = urlsplit(value.strip())
-    return urlunsplit((p.scheme.lower(), p.netloc.lower().removeprefix("www."),
-                       p.path.rstrip("/"), "", ""))
+from audit_full import norm_url
 
 seen_new, dup_new = set(), []
-for row in (r for r in pubs if r["run"] == "1 Sep"):
-    key = (row["city"], norm_url(row["link"]))
+for row in pubs:
+    key = (row["city"], norm_url(row["link"]), event_date(row), row["run"])
     if key in seen_new:
         dup_new.append(key)
     seen_new.add(key)
-    if not row["quote_uk"].strip() or row["quote_uk"].strip().lower() in {"unknown", "невідомо"}:
-        errors.append("1 Sep row has no body quote: %s %s" % (row["city"], row["link"]))
+    if row["run"] == "3 Sep" and (not row["quote_uk"].strip() or row["quote_uk"].strip().lower() in {"unknown", "невідомо"}):
+        errors.append("3 Sep row has no body quote: %s %s" % (row["city"], row["link"]))
 if dup_new:
-    errors.append("duplicate city + URL pairs inside run 1 Sep: %s" % dup_new[:8])
+    errors.append("duplicate city + URL + event date within a collection run: %s" % dup_new[:8])
 
 # 5. every link must resolve to an article, not a homepage
 fronts = [(r["city"], r["link"]) for r in pubs
@@ -169,6 +173,10 @@ if os.path.exists(bd_path):
         if not vals:
             continue
         peak = max(vals)
+        expected_peak_day = "2026-" + min(day for day in DAYS if str(by_name[city].get(day)) == str(peak))
+        city_row = next(c for c in cities if c["city"] == city)
+        if city_row["peak_day"] != expected_peak_day:
+            errors.append("%s: peak date %s differs from actual daily maximum date %s" % (city, city_row["peak_day"], expected_peak_day))
         peak_band = next(label for lo, hi, label in bands if lo <= peak <= hi)
         if cat in {"<100", "100–999", "1000–4999", "5000+"} and peak_band != cat:
             errors.append("%s: by_day peak %d gives %s, canon is %s" %
@@ -204,9 +212,17 @@ if DAYS and cities and "days_active" in cities[0]:
 for c in cities:
     dates = {event_date(r) for r in pubs if r["city"] == c["city"]
              and r["status"] not in {"announced", "refuted"} and event_date(r)}
-    if len(dates) > int(c["days_active"]):
-        errors.append("%s: %d unique publication event dates exceed days_active %s" %
-                      (c["city"], len(dates), c["days_active"]))
+    dates = {d for d in dates if datetime.date(2026, 7, 16) <= d <= datetime.date(2026, 8, 29)}
+    if c["city"] in by_name:
+        dates.update(datetime.date.fromisoformat("2026-" + day) for day in DAYS if by_name[c["city"]].get(day))
+    if len(dates) != int(c["days_active"]):
+        errors.append("%s: %d documented dates differ from days_active %s" % (c["city"], len(dates), c["days_active"]))
+    if dates and (c["first_day"] != min(dates).isoformat() or c["last_day"] != max(dates).isoformat()):
+        errors.append("%s: first/last day does not match documented event dates" % c["city"])
+
+if os.path.exists(ds("audit/2026-09-03/audit_ledger.json")):
+    from validate_audit import validate
+    errors.extend(validate())
 
 print("canon: %d locations | publications: %d" % (len(cities), len(pubs)))
 print("distribution: " + " · ".join("%s %d" % kv for kv in dist.most_common()) + " = %d" % sum(dist.values()))

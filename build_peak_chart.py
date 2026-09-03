@@ -197,7 +197,7 @@ fig.text(0.025, 0.112,
          "Blank days mean no usable Kyiv estimate; bars show body-level daily peaks.",
          fontsize=9.3, color=MUTED, ha="left")
 fig.text(0.025, 0.081,
-         "Chart: Valentyn Hatsko, TG: @gorbach_squad. Source: Ukrainian media, retrieved September 2026.",
+         "Chart: Valentyn Hatsko, TG: @gorbach_squad. Source: Ukrainian media; audited 3 September 2026.",
          fontsize=9.3, fontweight="semibold", color=INK, ha="left")
 fig.text(0.025, 0.050,
          "Data, code and method: github.com/KSE-Sociological-Center/fedorov-protests-2026",

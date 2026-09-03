@@ -94,6 +94,9 @@ b3 = [
     "**Calendar span:** %d days (%s–%s); collection checked through %s." %
         (len(DAYS), DAYS[0], DAYS[-1], META["snapshot"]),
     "",
+    "**Audit:** completed 3 September 2026 without extending the event window or publication cutoff. "
+    "See `audit/2026-09-03/` for row-level verdicts, exact evidence and unresolved sources.",
+    "",
     "**Status at close:** %s" % (", ".join(live) if live else
         "no location remained active; the last documented coordinated multi-city actions were on %s, "
         "and the latest documented local action was on %s." %

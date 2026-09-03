@@ -14,6 +14,7 @@ META = json.load(io.open(ds("meta.json"), encoding="utf-8"))
 
 SNAPSHOT = META["snapshot"]
 SNAPSHOT_ISO = datetime.datetime.strptime(SNAPSHOT, "%d %B %Y").date().isoformat()
+AUDIT_ISO = META.get("audit_date", SNAPSHOT_ISO)
 AUTHOR = META["author_en"]
 
 cities = list(csv.DictReader(io.open(ds("cities.csv"), encoding="utf-8")))
@@ -35,9 +36,9 @@ TITLE = "Protest locations and peak turnout"
 SUBTITLE = META["subtitle_en"].replace(" — ", "–")
 COORD_END = pretty_date(META["coordinated_end"])
 LAST_ACTION = pretty_date(last_day)
-STATUS_LINE = ("We checked Ukrainian media through %s. Ukrainian outlets last reported coordinated "
+STATUS_LINE = ("Publication coverage ends %s; data audited %s. Ukrainian outlets last reported coordinated "
                "actions on %s and one later local action in %s on %s. Kherson joined online." %
-               (SNAPSHOT, COORD_END, ", ".join(last_cities), LAST_ACTION))
+               (SNAPSHOT, AUDIT_ISO, COORD_END, ", ".join(last_cities), LAST_ACTION))
 
 LABEL_DIR = {
     "Kyiv": "up", "Kharkiv": "right", "Dnipro": "right", "Lviv": "left", "Odesa": "down",
@@ -60,12 +61,12 @@ WEB_NOTES = {
     "Kharkiv": ("MediaPort watched the crowd grow from about 100 to about 300 within half an hour. "
                 "Suspilne's national roundup also reported at least 300. Later reports put the city peak "
                 "at about 450 on 19 July."),
-    "Dnipro": ("Dnipro had 35 documented action days. About 15 people attended a local action on "
+    "Dnipro": ("Dnipro had 34 documented action days. About 15 people attended a local action on "
                "29 August; we found no later event."),
     "Odesa": ("One report put the 19 July crowd at about 1,000. The estimate sits on the category "
               "boundary and lacks a second source, so we mark Odesa as contested."),
-    "Poltava": ("Published estimates differ. We use Suspilne's report of about 130 people on "
-                "20 July and mark the city as contested."),
+    "Chernivtsi": ("The audited peak is about 150 on 19 July. A separate 100-person estimate for "
+                   "20 July and materially different reports make the city peak contested."),
     "Uzhhorod": ("A headline reported 200 people, but the article body gave no count. We use the "
                  "police estimate of about 50 from 16 July."),
     "Sumy": ("Residents used small pickets and left cardboard signs around the city because of the "
@@ -357,7 +358,7 @@ LD = {
     "spatialCoverage": {"@type": "Place", "name": "Ukraine",
                         "geo": {"@type": "GeoShape", "box": "44.3 21.7 52.45 40.35"}},
     "datePublished": META["date"],
-    "dateModified": SNAPSHOT_ISO,
+    "dateModified": AUDIT_ISO,
     "creator": {
         "@type": "Person", "name": META["author_en"].split(",")[0].strip(),
         "affiliation": {"@type": "Organization",

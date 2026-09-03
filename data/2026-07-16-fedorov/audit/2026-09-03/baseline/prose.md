@@ -1,20 +1,8 @@
 # Protests over Mykhailo Fedorov leaving the Defence Ministry — media collection
 
-**Publication coverage cutoff: 1 September 2026; targeted full audit: 3 September 2026.** The audit date does not extend the publication cutoff or the event window. The dataset covers documented actions from **16 July through 29 August 2026**, a **{DAYS}-day calendar span**. The last documented coordinated multi-city actions took place on **19 August**, when parliament appointed Yevhen Khmara defence minister and organisers described their recurring actions as final. A separate reformatted action of about 15 people took place in **Dnipro on 29 August**; no later action was found in the systematic 30 August–1 September check.
+**Final collection check: 1 September 2026.** The dataset covers documented actions from **16 July through 29 August 2026**, a **{DAYS}-day calendar span**. The last documented coordinated multi-city actions took place on **19 August**, when parliament appointed Yevhen Khmara defence minister and organisers described their recurring actions as final. A separate reformatted action of about 15 people took place in **Dnipro on 29 August**; no later action was found in the systematic 30 August–1 September check.
 
-Each city carries its **best-supported peak over the full wave**, not a count at one arbitrary hour. `first_day`, `last_day`, `days_active` and `peak_day` describe documented action days; they do not imply that every day in between had a count. The 115 publication × city rows from the previous update retain `run = 1 Sep`; 15 newly recovered audit rows use `run = 3 Sep`; all earlier run labels are preserved.
-
-## Targeted full audit — 3 September
-
-The immutable baseline contains 151 populated city-day estimates, 33 city summaries and 929 publication × city records. The audit assigned an explicit verdict to every one of them and screened all 635 baseline `unknown` records, including the complete `6 Aug` batch. The final canonical files contain 200 numeric city-days and 890 publication records.
-
-- 129 original numeric values were verified unchanged; 11 were corrected; 8 vague quantities were retained with their normalization explicit; 52 numeric cells were recovered; and 3 unsupported cells were left blank rather than set to zero.
-- The publication ledger records 41 confirmed same-run duplicate removals and 13 invalid or unrelated-record removals. Cross-run observations and meaningful URL parameters remain.
-- 25 normalized sources remain inaccessible or otherwise unresolved. These are distinguished from rejected evidence, and historical material remains in the immutable baseline.
-- The plan expected 537 URLs; an exact recount found 538 raw URL strings representing 536 normalized sources. The discrepancy is recorded rather than forced away.
-- This was targeted evidence recovery and a full audit of the current records, not a new exhaustive search for every possible publication.
-
-The detailed ledger is in `audit/2026-09-03/audit_ledger.json`; the audit README gives the reconciliation and reproduction commands.
+Each city carries its **best-supported peak over the full wave**, not a count at one arbitrary hour. `first_day`, `last_day`, `days_active` and `peak_day` describe documented action days; they do not imply that every day in between had a count. The 115 publication × city rows added in this update are tagged `run = 1 Sep`; earlier rows keep their historical run labels.
 
 > The tables below are generated from `cities.csv` and `publications.csv` by `build_report.py`. Edit the CSVs, not `report.md`. `check_consistency.py` verifies the shared data model and generated artifacts.
 

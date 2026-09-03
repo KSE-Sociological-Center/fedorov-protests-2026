@@ -1,0 +1,35 @@
+{
+  "audit_date": "2026-09-03",
+  "status": "passed",
+  "checks": {
+    "baseline_hashes_unchanged": true,
+    "original_numeric_verdicts": "151/151",
+    "city_summary_verdicts": "33/33",
+    "publication_screening_outcomes": "929/929",
+    "baseline_unknown_records_screened": "635/635",
+    "supplemental_small_number_passages_reviewed": "23/23",
+    "literal_daily_evidence_quotes": true,
+    "retrieval_and_content_hashes": true,
+    "fixed_event_window": "2026-07-16/2026-08-29",
+    "fixed_publication_cutoff": "2026-09-01",
+    "all_run_duplicate_check": true,
+    "exact_peak_and_peak_date_reconciliation": true,
+    "documented_action_date_reconciliation": true,
+    "csv_schemas_preserved": true,
+    "csv_roundtrip_matches_audited_matrices": true,
+    "unit_tests": "16/16 passed",
+    "idempotence": "two consecutive finalizer and CSV-builder runs produced identical SHA-256 hashes",
+    "regenerated_artifact_consistency": true,
+    "visual_qa": {
+      "map": "passed; no overflow or label collisions",
+      "daily_chart": "passed; no overflow or text collisions",
+      "kyiv_peak_chart": "passed; no overflow or label collisions",
+      "local_site": "generated and structurally validated; direct file URL preview was blocked by browser policy"
+    }
+  },
+  "commands": [
+    "python -m unittest test_audit_full.py -v",
+    "python validate_audit.py",
+    "python check_consistency.py data\\2026-07-16-fedorov"
+  ]
+}

@@ -224,7 +224,7 @@ for j, (fill, lab) in enumerate([(KYIV, "Kyiv"), (REST, "other cities (sum)")]):
 line([(28, H - 86), (W - 28, H - 86)], (221, 221, 221), 1)
 CAV = ("Approximate body-level figures; the number under a day is the number of cities counted. "
        "Blank days mean no usable city estimate, not necessarily no protest.")
-CREDIT = "Chart: Valentyn Hatsko, TG: @gorbach_squad. Source: Ukrainian media, retrieved September 2026."
+CREDIT = "Chart: Valentyn Hatsko, TG: @gorbach_squad. Source: Ukrainian media; audited 3 September 2026."
 REPO = "github.com/KSE-Sociological-Center/fedorov-protests-2026"
 T(28, H - 60, CAV, F_FOOT, GREY)
 T(28, H - 38, CREDIT, F_AUTH, BLACK)
